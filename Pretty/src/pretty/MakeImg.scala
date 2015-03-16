@@ -24,14 +24,14 @@ object MakeImg {
     
     val bimg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
 
-    val g = bimg.createGraphics();
+    val g = bimg.createGraphics()
 
-    g.setColor(Color.white);
-    g.fillRect(0, 0, width * POINT_SIZE, lines.length * LINE_HEIGHT);
-    println("w = " + width * POINT_SIZE + " h = " + lines.length * LINE_HEIGHT);
+    g.setColor(Color.white)
+    g.fillRect(0, 0, width * POINT_SIZE, lines.length * LINE_HEIGHT)
+    println("w = " + width * POINT_SIZE + " h = " + lines.length * LINE_HEIGHT)
     g.setColor(Color.black);
     
-    g.setFont(new Font("Courier New", Font.PLAIN, POINT_SIZE));
+    g.setFont(new Font("Courier New", Font.PLAIN, POINT_SIZE))
     
     lines.foldLeft(0) { (y, line) =>
       line.foldLeft(0) { (x, c) =>
