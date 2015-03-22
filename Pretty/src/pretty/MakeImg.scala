@@ -1,11 +1,13 @@
 package pretty
 
-import scala.io.Source
-import java.awt.image.BufferedImage
 import java.awt.Color
 import java.awt.Font
-import javax.imageio.ImageIO
+import java.awt.image.BufferedImage
 import java.io.File
+
+import scala.io.Source
+
+import javax.imageio.ImageIO
 
 object MakeImg {
   val POINT_SIZE = 10
