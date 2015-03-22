@@ -19,6 +19,10 @@ object Analyze {
     val fdr = new fdresult(true)
     
     BoxCountingMethod.BoxCountingMethod(fdr,fdi)
+    
+    val slope = fdr.CalcLogSlope
+    
+    println("FD = "+slope)
   }
 
 }

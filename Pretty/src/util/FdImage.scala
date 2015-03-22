@@ -4,13 +4,15 @@ import java.awt.Font
 import java.awt.Color
 import fractop.fdimage
 import scala.io.Source
+import javax.imageio.ImageIO
+import java.io.File
 
 object FdImage {
   val POINT_SIZE = 10
   val LINE_HEIGHT = POINT_SIZE
   
-  def getInstance(fileName: String): FdImage = {
-        val lines = Source.fromFile(fileName).getLines().toList
+  def getInstance(path: String, save: Boolean = false): FdImage = {
+    val lines = Source.fromFile(path).getLines().toList
 
     val width = lines.foldLeft(0) { (width, line) =>
       val len = line.length
@@ -18,6 +20,9 @@ object FdImage {
     }
     
     val fdi = new FdImage(lines,width)
+    
+    if(save)
+      ImageIO.write(fdi,"png",new File(path+".png"))
     
     fdi
   }
