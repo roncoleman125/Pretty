@@ -6,6 +6,7 @@ import fractop.fdimage
 import scala.io.Source
 import javax.imageio.ImageIO
 import java.io.File
+import java.awt.image.BufferedImage
 
 object FdImage {
   val POINT_SIZE = 10
@@ -26,6 +27,19 @@ object FdImage {
     
     fdi
   }
+  
+  def getReadyInstance(path: String): FdImage = {
+    null
+  }
+}
+
+class FdReadyImage(bimg: BufferedImage) extends fdimage(bimg.getWidth,bimg.getHeight,true) {
+  val g = createGraphics
+  
+  g.drawImage(bimg,0,0,null)
+//  for(x <- 0 to bimg.getWidth)
+//    for(y <- 0 to bimg.getHeight)
+//      this.setRGB(x, y, bimg.getRGB(x,y))
 }
 
 class FdImage(lines: List[String], width: Int) extends fdimage(width * FdImage.POINT_SIZE, lines.length * FdImage.LINE_HEIGHT, true) {
