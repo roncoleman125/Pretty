@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) Sclastic Contributors
+ * See CONTRIBUTORS.TXT for a full list of copyright holders.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Scaly Project nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE DEVELOPERS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package pretty
 
 import scala.collection.mutable.HashMap
@@ -8,39 +34,51 @@ object Mango {
   
 }
 
-class Mango(path: String) {
-  val trans = HashMap[String,String]()
-  var maps = Source.fromFile(path).getLines().toList
-  
-  // Load the transform pairs
-  maps.foreach { line =>
-    val keyValue = line.split(" ")
-    trans(keyValue(0)) = keyValue(1)
-  }
-  
-  def transform(line: String): String = {
-    trans.foldLeft(line) { (newLine,kv) =>
-      newLine.replaceAll(kv._1,kv._2)
-    }
-  }
-  
-  def none(path: String): List[String] = {
+/**
+ * This class implements the stresses or "mangos".
+ * @param path File path of the source file to mango.
+ */
+class Mango(path: String) { 
+  /** Doesn't mango the file. */
+  def none(): List[String] = {
     Source.fromFile(path).getLines().toList
   }
   
-  def nonmnemonic(path: String): List[String] = {
+  /**
+   * Makes the input file nonmnemonic.
+   * @param tpath File path of the transformations
+   */
+  def nonmnemonic(tpath: String): List[String] = {
+    val trans = HashMap[String,String]()
+    
+    val maps = Source.fromFile(tpath).getLines().toList
+    
+    def transform(line: String): String = {
+        trans.foldLeft(line) { (newLine,kv) =>
+        newLine.replaceAll(kv._1,kv._2)
+      }
+    }
+
+    // Load the transformations
+    maps.foreach { line =>
+      val keyValue = line.split(" ")
+      trans(keyValue(0)) = keyValue(1)
+    }
+    
     val lines = Source.fromFile(path).getLines().toList
     lines.map { line => transform(line) }
   }
   
-  def noIndent(path: String): List[String] = {
+  /** Removes all indents. */
+  def noIndent(): List[String] = {
     val lines = Source.fromFile(path).getLines().toList
     lines.map { line =>
       line.trim
     }
   }
 
-  def randomIndent(path: String, n: Int): List[String] = {
+  /** Randomizes the indent. */
+  def randomIndent(n: Int): List[String] = {
     val ran = new Random(0)
     val lines = Source.fromFile(path).getLines().toList
     lines.map { line =>
