@@ -7,20 +7,45 @@ import scala.io.Source
 import javax.imageio.ImageIO
 import java.io.File
 import java.awt.image.BufferedImage
+import scala.util.Random
+import pretty.Mango
 
 object FdImage {
   val POINT_SIZE = 10
   val LINE_HEIGHT = POINT_SIZE
   
-  def getInstance(path: String, save: Boolean = false): FdImage = {
-    val lines = Source.fromFile(path).getLines().toList
+  def getInstance(path: String, method: String, save: Boolean = false): FdImage = {
+    val mango = new Mango(path+".mango")
 
+    val lines = method match {
+
+      case "mnemonics" =>
+        mango.nonmnemonic(path)
+
+      case "none" =>
+        mango.none(path)
+
+      case "0" =>
+        mango.noIndent(path)
+
+      case "20" =>
+        mango.randomIndent(path,20)
+        
+      case "40" =>
+        mango.randomIndent(path,40)
+
+      case _ =>
+        println("bad method")
+        System.exit(1)
+        null
+    }
+    
     val width = lines.foldLeft(0) { (width, line) =>
       val len = line.length
       if (len > width) len else width
     }
-    
-    val fdi = new FdImage(lines,width)
+
+    val fdi = new FdImage(lines, width)
     
     if(save)
       ImageIO.write(fdi,"png",new File(path+".png"))
