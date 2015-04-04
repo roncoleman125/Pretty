@@ -34,7 +34,7 @@ import javax.imageio.ImageIO
 import java.io.File
 import java.awt.image.BufferedImage
 import scala.util.Random
-import pretty.Mango
+import pretty.Stressor
 
 object FdImage {
   val POINT_SIZE = 10
@@ -47,7 +47,7 @@ object FdImage {
    * @param save Set to true to save a png of image
    */
   def getInstance(path: String, method: String, save: Boolean = false): FdImage = {
-    val mango = new Mango(path)
+    val mango = new Stressor(path)
 
     val lines = method match {
 
