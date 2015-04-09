@@ -51,10 +51,8 @@ object Mango {
       "undef",
       "warning",
       "line",
-      "pragma"
-  )
-  
-  val miscwords = List(
+      "pragma",
+      // Miscellaneous
       "NULL",
       "size_t",
       "printf"
@@ -76,23 +74,22 @@ object Mango {
 //      }
 //    }
     
-    val line1 = "/* ABC */ 123 /* def"
-    val line2 = "xyz*/ hello world"
-    val line3 = "xyz*/"
-    val words = line3.split("\\*/")
-//    val w = filterBlockComments(List(line1,line2)).foreach(p => println(p))
-    
-//    val line3 = "hello // world"
-//    decommentLine(List(line3)).foreach(p => println(p))
-    val lines = Source.fromFile("data/ls.c").getLines().toList
-//    val lines = List("#include <config.h>","#include <stdio.h>","#include <getopt.h>","#include <sys/types.h>")
-    
-    val nocomments = filterBlockComments(lines).filter(p => p.trim().length >= 3)
-//    println(nocomments)
-    
-    val symtab = buildSymbolTable(nocomments).filter(t => t._1.trim().length >= 3)
-    println("viable symbols to mango: "+symtab.length)
-    println(symtab)
+
+//    val line3 = "xyz*/"
+//    val words = line3.split("\\*/")
+////    val w = filterBlockComments(List(line1,line2)).foreach(p => println(p))
+//    
+////    val line3 = "hello // world"
+////    decommentLine(List(line3)).foreach(p => println(p))
+//    val lines = Source.fromFile("data/ls.c").getLines().toList
+////    val lines = List("#include <config.h>","#include <stdio.h>","#include <getopt.h>","#include <sys/types.h>")
+//    
+//    val nocomments = filterBlockComments(lines).filter(p => p.trim().length >= 3)
+////    println(nocomments)
+//    
+//    val symtab = buildSymbolTable(nocomments).filter(t => t._1.trim().length >= 3)
+//    println("viable symbols to mango: "+symtab.length)
+//    println(symtab)
     
   }
   
@@ -122,21 +119,6 @@ object Mango {
   }
 
   /** Removes strings */
-  def filterStrings(lines: List[String]): List[String] = {
-    lines.foldLeft(List[String]()) { (composite, line) =>
-      if (line.count(p => p == '"') > 2)
-        composite
-      else {
-        val startString = line.indexOf("\"")
-        val endString = line.lastIndexOf("\"")
-        if (startString == -1 || startString == endString)
-          composite ++ List(line)
-        else {
-          composite ++ List(line.substring(0, startString) + line.substring(endString + 1))
-        }
-      }
-    }
-  }
 
   /** Removes line comments */
   def filterLineComments(lines: List[String]): List[String] = {
@@ -149,40 +131,84 @@ object Mango {
     }
   }
 
-  /** Removes block comments */
-  def filterBlockComments(lines: List[String]): List[String] = {
-    val OPENING_BLOCK = "/\\*"
-    val CLOSING_BLOCK = "\\*/"
-    val s = lines.foldLeft((false, List[String]())) { (inCommentLines, line) =>
-      val inComment = inCommentLines._1
-      val lines = inCommentLines._2
-//      println(">>" + line)
+  
+  def filterStrings(lines: List[String]): List[String] = {
+    // code "..." code
+    val SCENARIOA = """(.*)\".*\"(.*)""".r
+    
+    // code "...
+    val SCENARIOB = """(.*)\".*""".r
+    
+    // ..." code
+    val SCENARIOC = """.*\"(.*)""".r
+    null
+  }
+//  val line0 = """GOOG:310.84"""
+//    val line1 = "/* ABC */"
+//    val line2 = "xyz*/ hello world"
+//    filterBlockComments2(List(line1,line2)).foreach(p => println(p))  
+  val lines = Source.fromFile("data/ls.c").getLines().toList
+  filterBlockComments(lines).foreach(p => println(p))
+  
+  def filterBlockComments(lines: List[String]): List[String] = {   
+    // /* comment */ code
+    val SCENARIO0 = """/\*.*\*/(.*)""".r
+    
+    // code /* comment
+    val SCENARIO1 = """(.*)/\*.*""".r
+    
+    // */ code
+    val SCENARIO2 = """.*\*/(.*)""".r
+    
+    // code /* comment */
+    val SCENARIO3 = """(.*)/\*.*\*/""".r
+    
+    // code /* comment */ code
+    val SCENARIO4 = """(.*)/\*.*\*/(.*)""".r
+    
+    // code //
+    val SCENARIO5 = """(.*)//.*""".r
+    
+    val output = (0 until lines.length).foldLeft((false,List[String]())) { (commentLines,k) =>
+      val inComment = commentLines._1
+      val line = lines(k).trim
+//      if(k >= 0) {
+//        println(line)
+//        print("")
+//      }
 
-      val openings = line.split(OPENING_BLOCK)
+      line match {
+        case SCENARIO0(code) =>
+          (false,commentLines._2 ++ List(code))
+          
+        case SCENARIO1(code) =>
+          (true,commentLines._2 ++ List(code))
+          
+        case SCENARIO3(code) =>
+          (false,commentLines._2 ++ List(code))
+          
+        case SCENARIO4(codeBefore,codeAfter) =>
+          (false,commentLines._2 ++ List(codeBefore,codeAfter))
+          
+        case SCENARIO2(code) =>
+          if(!inComment)
+            println("warning detected possible bad block comment line "+k)
+            
+          (false,commentLines._2 ++ List(code))
 
-      val startComment = line.contains("/*")
-      val endComment = line.contains("*/")
-      val u = openings.foldLeft((startComment || inComment, "")) { (inCommentLine, words) =>
-        val inComment = inCommentLine._1
-        val line = inCommentLine._2
-        val closings = (words + " ").split(CLOSING_BLOCK)
-        if (closings.length == 1 && !inComment)
-          (inComment, words)
-        else {
-          val v = (0 until closings.length).foldLeft(line) { (comments, n) =>
-            if (n == 1)
-              comments + closings(n)
-            else
-              comments
-          }
-//          println((!endComment) + " || line:" + v)
-          (inComment && !endComment, v)
-        }
+        case SCENARIO5(code) =>
+          (inComment,List(code) ++ commentLines._2)
+          
+        case _ =>
+          if(inComment)
+            (inComment,commentLines._2)
+          else
+            (inComment, commentLines._2 ++ List(line))
       }
-      (u._1, lines ++ List(u._2))
     }
-    if (s._1 != false)
-      println("WARNING detected possible unclosed block comment.")
-    s._2
+    if(output._1 != false)
+      println("warning reached end of lines with open comment block.")
+      
+    output._2
   }
 }
