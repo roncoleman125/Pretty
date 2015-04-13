@@ -91,7 +91,7 @@ object Mango {
 //    println("12345678901234567890")
 //    println(ls(0))
     
-    val lines = filterStrings(filterTabs(Source.fromFile("data/cat.c").getLines().toList))
+    val lines = filterStrings(filterTabs(Source.fromFile("data/ls.c").getLines().toList))
        
     // Get only symbols of a given length
     val nocomments = filterComments(lines).
