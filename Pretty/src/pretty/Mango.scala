@@ -70,6 +70,7 @@ object Mango {
       "free",
       "malloc",
       "main",
+      // Miscellaneous
       "argc",
       "argv"
   )
@@ -77,6 +78,8 @@ object Mango {
   val delims = "[ \\\\}\\{\\]\\[*\\-+\\|/\\?\\.><=%\\$#!\\^&)(,:;]"
   
   val TAB_STOP = 4
+  val MIN_SYMBOL_SIZE = 3
+  val MIN_SYMBOL_FREQUENCY = 3
 
   def main(args:Array[String]): Unit = {  
 //    val t = s"#define MIN_COLUMN_WIDTH\t3"
@@ -91,10 +94,13 @@ object Mango {
     val lines = filterStrings(filterTabs(Source.fromFile("data/cat.c").getLines().toList))
        
     // Get only symbols of a given length
-    val nocomments = filterComments(lines).filter(p => p.trim().length >= 3)
+    val nocomments = filterComments(lines).
+      filter(p => p.trim().length >= MIN_SYMBOL_SIZE)
     
     // Get only symbols of a given frequency or higher
-    val symtab = buildSymbolTable(nocomments).filter(t => t._1.trim().length >= 3).sortWith(_._1.length > _._1.length)
+    val symtab = buildSymbolTable(nocomments).
+      filter(t => t._1.trim().length >= MIN_SYMBOL_FREQUENCY).
+        sortWith(_._1.length > _._1.length)
     
     println("viable symbols to mango: "+symtab.length)
     symtab.foreach { p =>
