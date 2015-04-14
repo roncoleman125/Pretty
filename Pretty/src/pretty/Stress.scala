@@ -30,7 +30,7 @@ import scala.collection.mutable.HashMap
 import scala.io.Source
 import scala.util.Random
 
-object Stressor { 
+object Stress { 
   
 }
 
@@ -38,7 +38,7 @@ object Stressor {
  * This class implements the stresses.
  * @param path File path of the source file to stressor.
  */
-class Stressor(path: String) { 
+class Stress(path: String) { 
   /** Doesn't mango the file. */
   def none(): List[String] = {
     Source.fromFile(path).getLines().toList
@@ -52,12 +52,6 @@ class Stressor(path: String) {
     val trans = HashMap[String,String]()
     
     val maps = Source.fromFile(tpath).getLines().toList
-    
-    def transform(line: String): String = {
-        trans.foldLeft(line) { (newLine,kv) =>
-        newLine.replaceAll(kv._1,kv._2)
-      }
-    }
 
     // Load the transformations
     maps.foreach { line =>
@@ -65,8 +59,18 @@ class Stressor(path: String) {
       trans(keyValue(0)) = keyValue(1)
     }
     
+    nonmnemonic(trans)
+  }
+
+  def nonmnemonic(trans: HashMap[String, String]): List[String] = {
     val lines = Source.fromFile(path).getLines().toList
-    lines.map { line => transform(line) }
+    lines.map { line => transform(line, trans) }
+  }
+
+  def transform(line: String, trans: HashMap[String, String]): String = {
+    trans.foldLeft(line) { (newLine, kv) =>
+      newLine.replaceAll(kv._1, kv._2)
+    }
   }
   
   /** Removes all indents. */

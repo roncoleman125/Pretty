@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package util
+package pretty.util
 
 import java.awt.Font
 import java.awt.Color
@@ -34,7 +34,8 @@ import javax.imageio.ImageIO
 import java.io.File
 import java.awt.image.BufferedImage
 import scala.util.Random
-import pretty.Stressor
+import pretty.Stress
+import pretty.Mango
 
 object FdImage {
   val POINT_SIZE = 10
@@ -47,24 +48,26 @@ object FdImage {
    * @param save Set to true to save a png of image
    */
   def getInstance(path: String, method: String, save: Boolean = false): FdImage = {
-    val mango = new Stressor(path)
+    val stress = new Stress(path)
 
     val lines = method match {
 
       case "mnemonics" =>
-        mango.nonmnemonic(path+".mango")
+        val mango = new Mango(path)
+        val trans = mango.getMappings(path)
+        stress.nonmnemonic(trans)
 
-      case "none" =>
-        mango.none
+      case "base" =>
+        stress.none
 
       case "0" =>
-        mango.noIndent()
+        stress.noIndent()
 
       case "20" =>
-        mango.randomIndent(20)
+        stress.randomIndent(20)
         
       case "40" =>
-        mango.randomIndent(40)
+        stress.randomIndent(40)
 
       case _ =>
         println("bad method")
@@ -110,7 +113,7 @@ class FdImage(lines: List[String], width: Int, useText: Boolean = false) extends
   
   g.fillRect(0, 0, width * FdImage.POINT_SIZE, lines.length * FdImage.LINE_HEIGHT)
   
-  println("w = " + width * FdImage.POINT_SIZE + " h = " + lines.length * FdImage.LINE_HEIGHT)
+  if(Constants.verbose) println("creating image w = " + width * FdImage.POINT_SIZE + " h = " + lines.length * FdImage.LINE_HEIGHT)
   
   // Set color to write text or blocks
   g.setColor(Color.black)

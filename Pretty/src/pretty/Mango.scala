@@ -3,6 +3,7 @@ package pretty
 import java.util.regex.Pattern
 import scala.collection.mutable.HashMap
 import scala.io.Source
+import pretty.util.Constants
 
 object Mango {
   val keywords = List(
@@ -80,32 +81,80 @@ object Mango {
   val TAB_STOP = 4
   val MIN_SYMBOL_SIZE = 3
   val MIN_SYMBOL_FREQUENCY = 3
-
-  def main(args:Array[String]): Unit = {  
-//    val t = s"#define MIN_COLUMN_WIDTH\t3"
-//    val t = s"ABCD\t\t3"
-//
-//    println(t.length)
-//    
-//    val ls = filterTabs(List(t))
-//    println("12345678901234567890")
-//    println(ls(0))
-    
-    val lines = filterStrings(filterTabs(Source.fromFile("data/ls.c").getLines().toList))
+  
+  def main(args:Array[String]): Unit = { 
+    val mango = new Mango(args(0))
+    val lines = mango.filterStrings( mango.filterTabs(Source.fromFile("data/cat.c").getLines().toList))
        
     // Get only symbols of a given length
-    val nocomments = filterComments(lines).
+    val nocomments =  mango.filterComments(lines).
       filter(p => p.trim().length >= MIN_SYMBOL_SIZE)
     
     // Get only symbols of a given frequency or higher
-    val symtab = buildSymbolTable(nocomments).
+    val symtab =  mango.buildSymbolTable(nocomments).
       filter(t => t._1.trim().length >= MIN_SYMBOL_FREQUENCY).
-        sortWith(_._1.length > _._1.length)
+        sortWith(_._1.length > _._1.length)  
+        
+    val trans =  mango.buildTransTable(symtab)
+  }
+}
+class Mango(path: String) {
+  def getMappings(path: String): HashMap[String,String] = {
+    if(Constants.verbose) println("creating mangos from "+path)
+    // Remove tabs and strings
+    if(Constants.verbose) println("removing strings and tabs...")
+    val lines = filterStrings(filterTabs(Source.fromFile(path).getLines().toList))
+       
+    // Get only symbols of a given length or longer
+    if(Constants.verbose) println("removing comments...")
+    val nocomments = filterComments(lines).
+      filter(p => p.trim().length >= Mango.MIN_SYMBOL_SIZE)
     
-    println("viable symbols to mango: "+symtab.length)
-    symtab.foreach { p =>
-      println("%3d %s".format(p._2,p._1))
-    }   
+    // Get only symbols of a given frequency or higher.
+    // Note: sort by length from longer to shorter is important on chance
+    // that some symbols may be contained in others.
+    if(Constants.verbose) println("building symbol table...")
+    val symtab = buildSymbolTable(nocomments).
+      filter(t => t._1.trim().length >= Mango.MIN_SYMBOL_FREQUENCY).
+        sortWith(_._1.length > _._1.length)  
+        
+    if(Constants.verbose) println("building transformation table...")
+    buildTransTable(symtab)    
+  }
+  
+  /** Returns the transformation table */
+  def buildTransTable(symtab: List[(String,Int)]): HashMap[String,String] = {
+    if(Constants.verbose) {
+    val easies = symtab.foldLeft(0) { (count, sym) =>
+      if(sym._1.contains("_"))
+        count+sym._2
+      else
+        count
+      }
+      println("transformations to make: "+easies)
+    }
+    symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
+      // Use only symbols with underbar
+      if(sym._1.contains("_")) {
+        // New symbol will be first word | (_ + first letter of word) *
+        val oldSym = sym._1
+        val words = oldSym.split("_")
+        val newSym = (1 until words.length).foldLeft(words(0)+"_") { (composite,k) =>
+          val word = words(k)
+          if(word.length > 0) composite + word(0) else composite
+        }
+        // If old and new syms are same, fallback to using first letter of each fragments
+        if(newSym == oldSym) {
+          val newSym2 = words.foldLeft("") { (composite,word) => composite+word(0) }
+          trans(oldSym) = newSym2
+        }
+        else
+          trans(oldSym) = newSym
+        trans
+      }
+      else
+        trans
+    }
   }
   
   /** Returns the symbol table as a list of 2-tuples, (symbol,frequency). */
@@ -113,11 +162,11 @@ object Mango {
     val symbolTable = new HashMap[String,Int]().withDefaultValue(0)
     
     lines.foreach { line =>
-      val words = line.split(delims+"+")
+      val words = line.split(Mango.delims+"+")
       words.foreach { word =>
         val cleanWord = word.trim.replace("\"","")
         if (word.length > 0) {
-          keywords.find(p => cleanWord == p) match {
+          Mango.keywords.find(p => cleanWord == p) match {
             case Some(s) =>
             case None =>
               symbolTable(cleanWord) += 1
@@ -140,7 +189,7 @@ object Mango {
         val offset = c match {
           case '\t' =>
             // Pad is distance in spaces to next tab stop
-            val padAmt = TAB_STOP - (pos % TAB_STOP)
+            val padAmt = Mango.TAB_STOP - (pos % Mango.TAB_STOP)
             for(i <- 0 until padAmt) buffer.append(' ')
             padAmt
           case _ =>
@@ -265,5 +314,34 @@ object Mango {
       println("warning reached end of lines with open comment block.")
       
     output._2
+  }
+  
+  def report(symtab: List[(String,Int)]) {
+    val easies = symtab.foldLeft(0) { (count, sym) =>
+      if(sym._1.contains("_"))
+        count+sym._2
+      else
+        count
+      }
+    
+    val hards = symtab.foldLeft(0) { (count, sym) =>
+      if(!sym._1.contains("_"))
+        count+sym._2
+      else
+        count
+      }
+    println("viable symbols to mango: "+symtab.length)
+    println("potential easies: "+easies)
+    println("potential hards: "+hards)
+    symtab.foreach { p =>
+      println("%3d %s".format(p._2,p._1))
+    }
+  }
+  
+  def report(trans: HashMap[String,String]) {
+    println("trans table:")
+    trans.foreach { p =>
+      println(p._1+" => "+p._2)
+    }    
   }
 }

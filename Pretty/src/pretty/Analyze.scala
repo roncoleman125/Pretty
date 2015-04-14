@@ -27,27 +27,35 @@
 package pretty
 
 import scala.io.Source
-import util.FdImage
+import pretty.util.FdImage
 import fractop.BoxCountingMethod
 import fractop.fdresult
 import fractop.Util
 import fractop.MassRadiusMethod
 import javax.imageio.ImageIO
-import util.FdReadyImage
+import pretty.util.FdReadyImage
 import java.io.File
+import pretty.util.Constants
 
 object Analyze {
   def main(args: Array[String]): Unit = {
+    // Path to source file
     val path = args(0)
-    val mango = args(1)
     
-    val fdi = FdImage.getInstance(path,mango)
-//    val bimg = ImageIO.read(new File("data/make-detab.c.png"));
-//    val fdi = new FdReadyImage(bimg)
-    println("analyzing "+args(0)+" with "+args(1)+ " and "+args(2))
-    val fdr = new fdresult(true)
+    // Stress method
+    val method = args(1)
+    
+    // FD measure
+    val measure = args(2)
+    
+    if(Constants.verbose) println("analyzing "+path+" with "+method+ " and "+measure)    
+    val fdi = FdImage.getInstance(path,method)
 
-    args(2) match {
+
+    val fdr = new fdresult(true)
+   
+    if(Constants.verbose) println("measuring fractal dimension...")
+    measure match {
       case "boxes" =>
         // Box values were taken from the GUI implementation.
         val boxes = Array(2, 3, 4, 6, 8, 12, 16, 32, 64, 128)
