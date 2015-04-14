@@ -134,10 +134,10 @@ class Mango(path: String) {
       println("transformations to make: "+easies)
     }
     symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
+      val oldSym = sym._1
       // Use only symbols with underbar
-      if(sym._1.contains("_")) {
+      if(oldSym.contains("_")) {
         // New symbol will be first word | (_ + first letter of word) *
-        val oldSym = sym._1
         val words = oldSym.split("_")
         val newSym = (1 until words.length).foldLeft(words(0)+"_") { (composite,k) =>
           val word = words(k)
@@ -152,9 +152,20 @@ class Mango(path: String) {
           trans(oldSym) = newSym
         trans
       }
+      else if(isAllCaps(oldSym)) {
+        val newSym = (0 until oldSym.length).foldLeft("") { (composite,k) =>
+          if(k % 2 == 0) composite + oldSym(k) else composite
+        }
+        trans(oldSym) = newSym
+        trans
+      }
       else
         trans
     }
+  }
+  
+  def isAllCaps(word: String): Boolean = {
+    word == word.toUpperCase
   }
   
   /** Returns the symbol table as a list of 2-tuples, (symbol,frequency). */

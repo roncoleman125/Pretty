@@ -52,7 +52,7 @@ object FdImage {
 
     val lines = method match {
 
-      case "mnemonics" =>
+      case "mn" =>
         val mango = new Mango(path)
         val trans = mango.getMappings(path)
         stress.nonmnemonic(trans)
