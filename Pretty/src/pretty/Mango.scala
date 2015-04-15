@@ -4,6 +4,8 @@ import java.util.regex.Pattern
 import scala.collection.mutable.HashMap
 import scala.io.Source
 import pretty.util.Constants
+import java.math.BigInteger
+import java.util.prefs.Base64
 
 object Mango {
   val keywords = List(
@@ -101,6 +103,7 @@ object Mango {
 class Mango(path: String) {
   def getMappings(path: String): HashMap[String,String] = {
     if(Constants.verbose) println("creating mangos from "+path)
+    
     // Remove tabs and strings
     if(Constants.verbose) println("removing strings and tabs...")
     val lines = filterStrings(filterTabs(Source.fromFile(path).getLines().toList))
@@ -119,7 +122,7 @@ class Mango(path: String) {
         sortWith(_._1.length > _._1.length)  
         
     if(Constants.verbose) println("building transformation table...")
-    buildTransTable(symtab)    
+    buildTransTable3(symtab)    
   }
   
   /** Returns the transformation table */
@@ -133,8 +136,10 @@ class Mango(path: String) {
       }
       println("transformations to make: "+easies)
     }
+    
     symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
       val oldSym = sym._1
+      
       // Use only symbols with underbar
       if(oldSym.contains("_")) {
         // New symbol will be first word | (_ + first letter of word) *
@@ -143,26 +148,52 @@ class Mango(path: String) {
           val word = words(k)
           if(word.length > 0) composite + word(0) else composite
         }
-        // If old and new syms are same, fallback to using first letter of each fragments
+        // If old and new syms are same, fall back to using first letter of each fragments
         if(newSym == oldSym) {
           val newSym2 = words.foldLeft("") { (composite,word) => composite+word(0) }
           trans(oldSym) = newSym2
         }
         else
           trans(oldSym) = newSym
-        trans
+//        trans
       }
       else if(isAllCaps(oldSym)) {
         val newSym = (0 until oldSym.length).foldLeft("") { (composite,k) =>
           if(k % 2 == 0) composite + oldSym(k) else composite
         }
         trans(oldSym) = newSym
-        trans
+//        trans
       }
-      else
-        trans
+
+      trans
     }
   }
+  
+  def buildTransTable2(symtab: List[(String,Int)]): HashMap[String,String] = {
+    var num = 0
+    symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
+      val oldSym = sym._1
+      val newSym = "v" + num
+      num += 1
+
+      trans(oldSym) = newSym
+      trans
+    }
+  }
+  
+  def buildTransTable3(symtab: List[(String,Int)]): HashMap[String,String] = {
+    symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
+      val oldSym = sym._1
+      val newSym = (0 to oldSym.length/2).foldLeft("") { (composite,c) =>
+        composite + c
+      }
+
+      trans(oldSym) = newSym
+      trans
+    }
+  }
+  
+  
   
   def isAllCaps(word: String): Boolean = {
     word == word.toUpperCase
