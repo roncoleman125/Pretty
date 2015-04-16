@@ -97,10 +97,15 @@ object Mango {
       filter(t => t._1.trim().length >= MIN_SYMBOL_FREQUENCY).
         sortWith(_._1.length > _._1.length)  
         
-    val trans =  mango.buildTransTable(symtab)
+    val trans =  mango.underbarSymbolize(symtab)
   }
 }
+
 class Mango(path: String) {
+  // Transform method of symbol to mango symbol
+  val TRANSFORM: List[(String,Int)] => HashMap[String,String] = halfSymbolize
+  
+  /** Returns the mappings of symbol to mango symbol */
   def getMappings(path: String): HashMap[String,String] = {
     if(Constants.verbose) println("creating mangos from "+path)
     
@@ -122,11 +127,11 @@ class Mango(path: String) {
         sortWith(_._1.length > _._1.length)  
         
     if(Constants.verbose) println("building transformation table...")
-    buildTransTable3(symtab)    
+    TRANSFORM(symtab)    
   }
   
-  /** Returns the transformation table */
-  def buildTransTable(symtab: List[(String,Int)]): HashMap[String,String] = {
+    /** Returns the transformation table */
+  def underbarSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
     if(Constants.verbose) {
     val easies = symtab.foldLeft(0) { (count, sym) =>
       if(sym._1.contains("_"))
@@ -142,7 +147,7 @@ class Mango(path: String) {
       
       // Use only symbols with underbar
       if(oldSym.contains("_")) {
-        // New symbol will be first word | (_ + first letter of word) *
+        // New symbol will be first word plus _ plus first letter of each subsequent word
         val words = oldSym.split("_")
         val newSym = (1 until words.length).foldLeft(words(0)+"_") { (composite,k) =>
           val word = words(k)
@@ -155,48 +160,38 @@ class Mango(path: String) {
         }
         else
           trans(oldSym) = newSym
-//        trans
       }
-      else if(isAllCaps(oldSym)) {
+      else if(oldSym.toUpperCase == oldSym) {
         val newSym = (0 until oldSym.length).foldLeft("") { (composite,k) =>
           if(k % 2 == 0) composite + oldSym(k) else composite
         }
         trans(oldSym) = newSym
-//        trans
       }
 
       trans
     }
   }
   
-  def buildTransTable2(symtab: List[(String,Int)]): HashMap[String,String] = {
-    var num = 0
-    symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
-      val oldSym = sym._1
-      val newSym = "v" + num
-      num += 1
-
-      trans(oldSym) = newSym
-      trans
-    }
+  /** Returns new symbols as symbol plus count */
+  def countSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
+    (0 until symtab.length).foldLeft(HashMap[String,String]()) { (newTable, k) =>
+      val oldSym = symtab(k)._1
+      val newSym = "v" + k
+      newTable(oldSym) = newSym
+      newTable
+      }
   }
   
-  def buildTransTable3(symtab: List[(String,Int)]): HashMap[String,String] = {
+  /** Returns new symbols as symbol cut in half */
+  def halfSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
     symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
       val oldSym = sym._1
       val newSym = (0 to oldSym.length/2).foldLeft("") { (composite,c) =>
         composite + c
       }
-
       trans(oldSym) = newSym
       trans
     }
-  }
-  
-  
-  
-  def isAllCaps(word: String): Boolean = {
-    word == word.toUpperCase
   }
   
   /** Returns the symbol table as a list of 2-tuples, (symbol,frequency). */
