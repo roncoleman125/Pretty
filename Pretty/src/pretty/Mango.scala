@@ -8,7 +8,7 @@ import java.math.BigInteger
 import java.util.prefs.Base64
 
 object Mango {
-  val keywords = List(
+  val skipwords = List(
       "auto",
       "break",
       "bool",
@@ -103,7 +103,7 @@ object Mango {
 
 class Mango(path: String) {
   // Transform method of symbol to mango symbol
-  val TRANSFORM: List[(String,Int)] => HashMap[String,String] = halfSymbolize
+  val TRANSFORM: List[(String,Int)] => HashMap[String,String] = underbarSymbolize
   
   /** Returns the mappings of symbol to mango symbol */
   def getMappings(path: String): HashMap[String,String] = {
@@ -112,6 +112,7 @@ class Mango(path: String) {
     // Remove tabs and strings
     if(Constants.verbose) println("removing strings and tabs...")
     val lines = filterStrings(filterTabs(Source.fromFile(path).getLines().toList))
+     if(Constants.verbose) lines.foreach(p => println(p))
        
     // Get only symbols of a given length or longer
     if(Constants.verbose) println("removing comments...")
@@ -127,7 +128,11 @@ class Mango(path: String) {
         sortWith(_._1.length > _._1.length)  
         
     if(Constants.verbose) println("building transformation table...")
-    TRANSFORM(symtab)    
+    val trans = TRANSFORM(symtab)
+    
+    if(Constants.verbose) trans.foreach { t => println(t._1+" => "+t._2)}
+    
+    trans
   }
   
     /** Returns the transformation table */
@@ -161,9 +166,20 @@ class Mango(path: String) {
         else
           trans(oldSym) = newSym
       }
+      else if (oldSym.filter(p => !p.isDigit).length == 0) {
+        // Skip numbers
+      }
       else if(oldSym.toUpperCase == oldSym) {
+        // If symbol all upper case, use every other character
         val newSym = (0 until oldSym.length).foldLeft("") { (composite,k) =>
           if(k % 2 == 0) composite + oldSym(k) else composite
+        }
+        trans(oldSym) = newSym
+      }
+      else {
+        // If symbol has no clues, split name in half
+        val newSym = (0 to oldSym.length/2).foldLeft("") { (composite, k) =>
+          composite + oldSym(k)
         }
         trans(oldSym) = newSym
       }
@@ -186,8 +202,8 @@ class Mango(path: String) {
   def halfSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
     symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
       val oldSym = sym._1
-      val newSym = (0 to oldSym.length/2).foldLeft("") { (composite,c) =>
-        composite + c
+      val newSym = (0 to oldSym.length/2).foldLeft("") { (composite,k) =>
+        composite + oldSym(k)
       }
       trans(oldSym) = newSym
       trans
@@ -203,7 +219,7 @@ class Mango(path: String) {
       words.foreach { word =>
         val cleanWord = word.trim.replace("\"","")
         if (word.length > 0) {
-          Mango.keywords.find(p => cleanWord == p) match {
+          Mango.skipwords.find(p => cleanWord == p) match {
             case Some(s) =>
             case None =>
               symbolTable(cleanWord) += 1
@@ -261,7 +277,7 @@ class Mango(path: String) {
     val SCENARIO_C = """.*\"(.*)""".r
     
     val output = (0 until lines.length).foldLeft((false,List[String]())) { (stringLines,k) =>
-      if(k > 4568)
+      if(k > 267)
         k
         
       val inComment = stringLines._1
