@@ -37,7 +37,7 @@ import scala.util.Random
 import pretty.Stress
 import pretty.Mango
 
-object FdImage {
+object Imagery {
   val POINT_SIZE = 10
   val LINE_HEIGHT = POINT_SIZE
   
@@ -47,7 +47,7 @@ object FdImage {
    * @param method Method to stress or "mango" file
    * @param save Set to true to save a png of image
    */
-  def getInstance(path: String, method: String, save: Boolean = false): FdImage = {
+  def getInstance(path: String, method: String, save: Boolean = false): Imagery = {
     val stress = new Stress(path)
 
     val lines = method match {
@@ -80,7 +80,7 @@ object FdImage {
       if (len > width) len else width
     }
 
-    val fdi = new FdImage(lines, width)
+    val fdi = new Imagery(lines, width)
     
     if(save)
       ImageIO.write(fdi,"png",new File(path+".png"))
@@ -93,7 +93,7 @@ object FdImage {
  * Makes an fractal dimension image from a ready-made image.
  * Useful mainly for testing purposes.
  */
-class FdReadyImage(bimg: BufferedImage) extends fdimage(bimg.getWidth,bimg.getHeight,true) {
+class ImageryReadyImage(bimg: BufferedImage) extends fdimage(bimg.getWidth,bimg.getHeight,true) {
   val g = createGraphics
   
   g.drawImage(bimg,0,0,null)
@@ -105,21 +105,21 @@ class FdReadyImage(bimg: BufferedImage) extends fdimage(bimg.getWidth,bimg.getHe
  * @param width Image width (i.e., the longest line length)
  * @param useText Set to true to write text instead of blocks
  */
-class FdImage(lines: List[String], width: Int, useText: Boolean = false) extends fdimage(width * FdImage.POINT_SIZE, lines.length * FdImage.LINE_HEIGHT, true) {
+class Imagery(lines: List[String], width: Int, useText: Boolean = false) extends fdimage(width * Imagery.POINT_SIZE, lines.length * Imagery.LINE_HEIGHT, true) {
   val g = createGraphics
   
   // Draw white background
   g.setColor(Color.white)
   
-  g.fillRect(0, 0, width * FdImage.POINT_SIZE, lines.length * FdImage.LINE_HEIGHT)
+  g.fillRect(0, 0, width * Imagery.POINT_SIZE, lines.length * Imagery.LINE_HEIGHT)
   
-  if(Constants.verbose) println("creating image w = " + width * FdImage.POINT_SIZE + " h = " + lines.length * FdImage.LINE_HEIGHT)
+  if(Constants.verbose) println("creating image w = " + width * Imagery.POINT_SIZE + " h = " + lines.length * Imagery.LINE_HEIGHT)
   
   // Set color to write text or blocks
   g.setColor(Color.black)
 
   // Set the font which we only use if using text
-  g.setFont(new Font("Courier New", Font.PLAIN, FdImage.POINT_SIZE))
+  g.setFont(new Font("Courier New", Font.PLAIN, Imagery.POINT_SIZE))
 
   // Write out image
   lines.foldLeft(0) { (y, line) =>
@@ -128,11 +128,11 @@ class FdImage(lines: List[String], width: Int, useText: Boolean = false) extends
     else {
       line.foldLeft(0) { (x, c) =>
         if (c != ' ')
-          g.fillRect(x, y, FdImage.POINT_SIZE - 2, FdImage.POINT_SIZE)
+          g.fillRect(x, y, Imagery.POINT_SIZE - 2, Imagery.POINT_SIZE)
 
-        x + FdImage.POINT_SIZE
+        x + Imagery.POINT_SIZE
       }
     }
-    y + FdImage.LINE_HEIGHT
+    y + Imagery.LINE_HEIGHT
   }
 }

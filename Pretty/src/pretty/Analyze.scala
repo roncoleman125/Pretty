@@ -27,13 +27,13 @@
 package pretty
 
 import scala.io.Source
-import pretty.util.FdImage
+import pretty.util.Imagery
 import fractop.BoxCountingMethod
 import fractop.fdresult
 import fractop.Util
 import fractop.MassRadiusMethod
 import javax.imageio.ImageIO
-import pretty.util.FdReadyImage
+import pretty.util.ImageryReadyImage
 import java.io.File
 import pretty.util.Constants
 
@@ -49,7 +49,7 @@ object Analyze {
     val measure = args(2)
     
     if(Constants.verbose) println("analyzing "+path+" with "+method+ " and "+measure)    
-    val fdi = FdImage.getInstance(path,method)
+    val fdi = Imagery.getInstance(path,method)
 
 
     val fdr = new fdresult(true)
