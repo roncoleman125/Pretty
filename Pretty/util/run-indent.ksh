@@ -25,7 +25,7 @@ do
   echo $NAME
   LC=`wc -l $FILE|awk '{print$1}'`
   RESULTS="$NAME $LC "
-  for STYLE in "$DEFAULT" "$GNU" "$KR" "$BERKELEY" "$LINUX"
+  for STYLE in "$GNU" "$KR" "$BERKELEY" "$LINUX"
   do
     INDENTED=${FILE}.indent
     /usr/local/bin/gindent $STYLE $FILE -o $INDENTED
