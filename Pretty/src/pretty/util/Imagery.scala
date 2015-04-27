@@ -56,19 +56,18 @@ object Imagery {
         val mango = new Mango(path)
         val trans = mango.getMappings(path)
         stress.nonmnemonic(trans)
-
+        
+      case "nc" =>
+        new Mango(path).decomment
+        
       case "base" =>
         stress.none
 
-      case "0" =>
-        stress.noIndent()
-
-      case "20" =>
-        stress.randomIndent(20)
+      case num: String if num.toInt >= 0 =>
+        val amount = num.toInt
         
-      case "40" =>
-        stress.randomIndent(40)
-
+        if(amount == 0) stress.noIndent else stress.randomIndent(amount)
+        
       case _ =>
         println("bad method")
         System.exit(1)

@@ -230,6 +230,11 @@ class Mango(path: String) {
     symbolTable.toList
   }
   
+  /** Returns path without comments */
+  def decomment: List[String] = {
+    filterComments(filterStrings(filterTabs(Source.fromFile(path).getLines().toList)))
+  }
+  
   /** Returns tabs replaced with spaces. */
   def filterTabs(lines: List[String]): List[String] = {
     lines.map { line =>
@@ -254,16 +259,16 @@ class Mango(path: String) {
     }
   }
   
-  /** Returns lines without line-oriented comments. */
-  def filterLineComments(lines: List[String]): List[String] = {
-    lines.foldLeft(List[String]()) { (composite,line) =>
-      val startCommentIndex = line.indexOf("//")
-      if(startCommentIndex == -1)
-        composite ++ List(line)
-      else
-        composite ++ List(line.substring(0,startCommentIndex-1))
-    }
-  }
+//  /** Returns lines without line-oriented comments. */
+//  def filterLineComments(lines: List[String]): List[String] = {
+//    lines.foldLeft(List[String]()) { (composite,line) =>
+//      val startCommentIndex = line.indexOf("//")
+//      if(startCommentIndex == -1)
+//        composite ++ List(line)
+//      else
+//        composite ++ List(line.substring(0,startCommentIndex-1))
+//    }
+//  }
 
   /** Returns lines without strings. */
   def filterStrings(lines: List[String]): List[String] = {
@@ -307,22 +312,22 @@ class Mango(path: String) {
   }
   
   def filterComments(lines: List[String]): List[String] = {   
-    // /* comment */ code
+    // /* block comment */ code
     val SCENARIO_A = """/\*.*\*/(.*)""".r
     
-    // code /* comment
+    // code /* block comment start
     val SCENARIO_B = """(.*)/\*.*""".r
     
-    // */ code
+    // block comment end */ code
     val SCENARIO_C = """.*\*/(.*)""".r
     
-    // code /* comment */
+    // code /* block comment */
     val SCENARIO_D = """(.*)/\*.*\*/""".r
     
-    // code /* comment */ code
+    // code /* block comment */ code
     val SCENARIO_E = """(.*)/\*.*\*/(.*)""".r
     
-    // code //
+    // code // single line comment
     val SCENARIO_F = """(.*)//.*""".r
     
     val output = (0 until lines.length).foldLeft((false,List[String]())) { (commentLines,k) =>
