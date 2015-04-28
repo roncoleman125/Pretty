@@ -232,7 +232,7 @@ class Mango(path: String) {
   
   /** Returns path without comments */
   def decomment: List[String] = {
-    filterComments(filterStrings(filterTabs(Source.fromFile(path).getLines().toList)))
+    filterComments(filterTabs(Source.fromFile(path).getLines().toList))
   }
   
   /** Returns tabs replaced with spaces. */
@@ -258,56 +258,54 @@ class Mango(path: String) {
         } . _2
     }
   }
-  
-//  /** Returns lines without line-oriented comments. */
-//  def filterLineComments(lines: List[String]): List[String] = {
-//    lines.foldLeft(List[String]()) { (composite,line) =>
-//      val startCommentIndex = line.indexOf("//")
-//      if(startCommentIndex == -1)
-//        composite ++ List(line)
-//      else
-//        composite ++ List(line.substring(0,startCommentIndex-1))
-//    }
-//  }
+
+  //  /** Returns lines without line-oriented comments. */
+  //  def filterLineComments(lines: List[String]): List[String] = {
+  //    lines.foldLeft(List[String]()) { (composite,line) =>
+  //      val startCommentIndex = line.indexOf("//")
+  //      if(startCommentIndex == -1)
+  //        composite ++ List(line)
+  //      else
+  //        composite ++ List(line.substring(0,startCommentIndex-1))
+  //    }
+  //  }
 
   /** Returns lines without strings. */
   def filterStrings(lines: List[String]): List[String] = {
     // code "..." code
     val SCENARIO_A = """(.*)\".*\"(.*)""".r
-    
+
     // code "...
     val SCENARIO_B = """(.*)\".*""".r
-    
+
     // ..." code
     val SCENARIO_C = """.*\"(.*)""".r
-    
-    val output = (0 until lines.length).foldLeft((false,List[String]())) { (stringLines,k) =>
-      if(k > 267)
-        k
-        
+
+    val output = (0 until lines.length).foldLeft((false, List[String]())) { (stringLines, k) =>
+
       val inComment = stringLines._1
-      
+
       // Get rid of trim spaces and escaped quotes
-      val line = lines(k).trim .replaceAll("\\\\\"","@")
-      
+      val line = lines(k). /*trim .*/ replaceAll("\\\\\"", "@")
+
       line match {
-        case SCENARIO_A(codeBefore,codeAfter) =>
-          (false,stringLines._2 ++ List(codeBefore+"\""+"\""+codeAfter))
-          
-        case SCENARIO_B(code) if !inComment =>           
-          (true,stringLines._2 ++ List(code+"\""))
-          
-        case SCENARIO_C(code) if inComment =>            
-          (false,stringLines._2 ++ List("\""+code))
-          
+        case SCENARIO_A(codeBefore, codeAfter) =>
+          (false, stringLines._2 ++ List(codeBefore + "\"" + "\"" + codeAfter))
+
+        case SCENARIO_B(code) if !inComment =>
+          (true, stringLines._2 ++ List(code + "\""))
+
+        case SCENARIO_C(code) if inComment =>
+          (false, stringLines._2 ++ List("\"" + code))
+
         case _ =>
-          if(inComment)
-            (true,stringLines._2)
+          if (inComment)
+            (true, stringLines._2)
           else
-            (false,stringLines._2 ++ List(line))
+            (false, stringLines._2 ++ List(line))
       }
     }
-    
+
     output._2
   }
   
@@ -332,33 +330,45 @@ class Mango(path: String) {
     
     val output = (0 until lines.length).foldLeft((false,List[String]())) { (commentLines,k) =>
       val inComment = commentLines._1
-      val line = lines(k).trim
+      val line = lines(k) //.trim
 //      if(k >= 0) {
 //        println(line)
 //        print("")
 //      }
 
-      line match {
+      line.trim match {
         case SCENARIO_A(code) =>
-          (false,commentLines._2 ++ List(code))
-          
-        case SCENARIO_B(code) =>
-          (true,commentLines._2 ++ List(code))
-          
+          checkState(inComment,false,k+1)
+            
+          if(code.trim.length != 0) (false,commentLines._2 ++ List(code)) else (false,commentLines._2)
+
         case SCENARIO_D(code) =>
-          (false,commentLines._2 ++ List(code))
+          checkState(inComment,false,k+1)
+          
+          if(code.trim.length != 0) (false,commentLines._2 ++ List(code)) else (false,commentLines._2)
           
         case SCENARIO_E(codeBefore,codeAfter) =>
-          (false,commentLines._2 ++ List(codeBefore,codeAfter))
+          checkState(inComment,false,k+1)
+          
+          if(codeBefore.trim.length != 0 && codeAfter.trim.length != 0)
+            (false,commentLines._2 ++ List(codeBefore,codeAfter))
+          else if(codeBefore.trim.length != 0)
+              (false,commentLines._2 ++ List(codeBefore))
+          else
+            (false,commentLines._2 ++ List(codeAfter))
+          
+        case SCENARIO_B(code) =>
+          checkState(inComment,false,k+1)
+          
+          if(code.trim.length != 0) (true,commentLines._2 ++ List(code)) else (true,commentLines._2)
           
         case SCENARIO_C(code) =>
-          if(!inComment)
-            println("warning detected possible bad block comment line "+(k+1))
+          checkState(inComment,true,k+1)
             
-          (false,commentLines._2 ++ List(code))
+          if(code.trim.length != 0) (false,commentLines._2 ++ List(code)) else (false,commentLines._2)
 
         case SCENARIO_F(code) =>
-          (inComment,List(code) ++ commentLines._2)
+           if(code.trim.length != 0) (inComment,List(code) ++ commentLines._2) else (inComment,commentLines._2)
           
         case _ =>
           if(inComment)
@@ -369,9 +379,14 @@ class Mango(path: String) {
     }
     
     if(output._1 != false)
-      println("warning reached end of lines with open comment block.")
+      Console.err.println("warning reached end of lines with open comment block.")
       
     output._2
+  }
+  
+  def checkState(actual: Boolean, expected: Boolean,lineno: Int) {
+    if(actual != expected)
+      Console.err.println("warning detected possible bad block comment: line "+lineno)
   }
   
   def report(symtab: List[(String,Int)]) {
