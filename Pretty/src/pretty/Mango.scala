@@ -79,10 +79,7 @@ object Mango {
   )
   
   val delims = "[ \\\\}\\{\\]\\[*\\-+\\|/\\?\\.><=%\\$#!\\^&)(,:;]"
-  
-  val TAB_STOP = 4
-  val MIN_SYMBOL_SIZE = 3
-  val MIN_SYMBOL_FREQUENCY = 3
+
   
   def main(args:Array[String]): Unit = { 
     val mango = new Mango(args(0))
@@ -90,11 +87,11 @@ object Mango {
        
     // Get only symbols of a given length
     val nocomments =  mango.filterComments(lines).
-      filter(p => p.trim().length >= MIN_SYMBOL_SIZE)
+      filter(p => p.trim().length >= Constants.MIN_SYMBOL_SIZE)
     
     // Get only symbols of a given frequency or higher
     val symtab =  mango.buildSymbolTable(nocomments).
-      filter(t => t._1.trim().length >= MIN_SYMBOL_FREQUENCY).
+      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_FREQUENCY).
         sortWith(_._1.length > _._1.length)  
         
     val trans =  mango.underbarSymbolize(symtab)
@@ -116,23 +113,82 @@ class Mango(path: String) {
        
     // Get only symbols of a given length or longer
     if(Constants.verbose) println("removing comments...")
-    val nocomments = filterComments(lines).
-      filter(p => p.trim().length >= Mango.MIN_SYMBOL_SIZE)
+    val nocomments = filterComments(lines)
     
     // Get only symbols of a given frequency or higher.
     // Note: sort by length from longer to shorter is important on chance
     // that some symbols may be contained in others.
     if(Constants.verbose) println("building symbol table...")
     val symtab = buildSymbolTable(nocomments).
-      filter(t => t._1.trim().length >= Mango.MIN_SYMBOL_FREQUENCY).
+      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_FREQUENCY).filter(t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY).
         sortWith(_._1.length > _._1.length)  
         
     if(Constants.verbose) println("building transformation table...")
     val trans = TRANSFORM(symtab)
     
-    if(Constants.verbose) trans.foreach { t => println(t._1+" => "+t._2)}
+//    if(Constants.verbose) trans.foreach { t => println(t._1+" => "+t._2)}
     
     trans
+  }
+  
+  def getMappings(path: String, symLenFilter: ((String,Int)) => Boolean, symFreqFilter: ((String,Int)) => Boolean ): HashMap[String,String] = {
+    if(Constants.verbose) println("creating mangos from "+path)
+    
+    // Remove tabs and strings
+    if(Constants.verbose) println("removing strings and tabs...")
+    val lines = filterStrings(filterTabs(Source.fromFile(path).getLines().toList))
+//    if(Constants.verbose) lines.foreach(p => println(p))
+       
+    // Get only symbols of a given length or longer
+    if(Constants.verbose) println("removing comments...")
+    val nocomments = filterComments(lines)
+    
+    // Get only symbols of a given frequency or higher.
+    // Note: sort by length from longer to shorter is important on chance
+    // that some symbols may be contained in others.
+    if(Constants.verbose) println("building symbol table...")
+    val symtabUnfiltered = buildSymbolTable(nocomments)
+    val symtab = symtabUnfiltered.filter(symFreqFilter).filter(symLenFilter).sortWith(_._1.length > _._1.length).
+      filter(t => isIdentifier(t._1))
+    symtab.foreach { t => println(t._1 + " => "+t._2)}
+        
+    if(Constants.verbose) println("building transformation table...")
+    val trans = doubleLengthSymbolize(symtab)
+    
+//    if(Constants.verbose) trans.foreach { t => println(t._1+" => "+t._2)}
+    
+    trans
+  }
+  
+  /** Returns true if the string is an identifier */
+  def isIdentifier(s: String): Boolean = {
+    if(s.length == 0 || !(s(0).isLetter || s(0) == '_' ))
+        return false
+    val t = s.substring(1)
+    
+    for(i <- 0 until t.length)
+      if(!(t(i).isLetterOrDigit || t(i) == '_'))
+        return false
+    true
+  }
+  
+  
+   def doubleLengthSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
+    (0 until symtab.length).foldLeft(HashMap[String,String]()) { (newTable, k) =>
+      val oldSym = symtab(k)._1
+      val newSym = oldSym.length match {
+        case 1 =>
+          oldSym + oldSym + oldSym + oldSym
+        case 2 =>
+          oldSym + oldSym
+        case 3 =>
+          oldSym + "_"
+        case _ =>
+          oldSym + oldSym
+      }
+      newTable(oldSym) = newSym
+      newTable
+    }
   }
   
     /** Returns the transformation table */
@@ -247,7 +303,7 @@ class Mango(path: String) {
         val offset = c match {
           case '\t' =>
             // Pad is distance in spaces to next tab stop
-            val padAmt = Mango.TAB_STOP - (pos % Mango.TAB_STOP)
+            val padAmt = Constants.TAB_STOP - (pos % Constants.TAB_STOP)
             for(i <- 0 until padAmt) buffer.append(' ')
             padAmt
           case _ =>

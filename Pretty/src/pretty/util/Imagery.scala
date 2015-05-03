@@ -57,6 +57,11 @@ object Imagery {
         val trans = mango.getMappings(path)
         stress.nonmnemonic(trans)
         
+      case "beau" =>
+        val mango = new Mango(path)
+        val trans = mango.getMappings(path, t => t._1.length <= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
+        stress.nonmnemonic(trans)        
+        
       case "nc" =>
         new Mango(path).decomment
         
