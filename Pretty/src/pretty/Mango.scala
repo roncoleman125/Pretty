@@ -217,10 +217,13 @@ class Mango(path: String) {
         // If old and new syms are same, fall back to using first letter of each fragments
         if(newSym == oldSym) {
           val newSym2 = words.foldLeft("") { (composite,word) => composite+word(0) }
+          if(trans.contains(newSym2)) Console.err.println(oldSym+" => "+newSym2+" collision")
           trans(oldSym) = newSym2
         }
-        else
+        else {
+          if(trans.contains(newSym)) Console.err.println(oldSym+" => "+newSym+" collision")
           trans(oldSym) = newSym
+        }
       }
       else if (oldSym.filter(p => !p.isDigit).length == 0) {
         // Skip numbers
@@ -230,6 +233,7 @@ class Mango(path: String) {
         val newSym = (0 until oldSym.length).foldLeft("") { (composite,k) =>
           if(k % 2 == 0) composite + oldSym(k) else composite
         }
+        if(trans.contains(newSym)) Console.err.println(oldSym+" => "+newSym+" collision")
         trans(oldSym) = newSym
       }
       else {
@@ -237,6 +241,7 @@ class Mango(path: String) {
         val newSym = (0 to oldSym.length/2).foldLeft("") { (composite, k) =>
           composite + oldSym(k)
         }
+        if(trans.contains(newSym)) Console.err.println(oldSym+" => "+newSym+" collision")
         trans(oldSym) = newSym
       }
 

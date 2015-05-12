@@ -15,7 +15,7 @@ do
   echo $NAME
   LC=`wc -l $FILE|awk '{print$1}'`
   RESULTS="$NAME $LC "
-  for METHOD in beau # base 0 20 40 nm
+  for METHOD in base 0 20 40 nm beau
   do
     FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $FILE $METHOD boxes | awk '/FD =/{print $3}'`
     RESULTS="$RESULTS $FD"
