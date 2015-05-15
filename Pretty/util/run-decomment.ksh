@@ -6,7 +6,7 @@ SCALA_BIN="/Users/roncoleman125/programs/scala-2.11.6/bin"
 PATH=$SCALA_BIN:$PATH
 
 DAY=`date +%Y%m%d`
-OUTPUT_FILE=~/tmp/indents-${DAY}.txt
+OUTPUT_FILE=~/tmp/decom-${DAY}.txt
 
 rm $OUTPUT_FILE
 
@@ -19,7 +19,7 @@ LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -d
 
 # Assumes we're in util folder
 cd ../bin
-for FILE in ../data/ls.c #../data/*.c
+for FILE in ../data/*.c
 do
   START=`date +%T`
   NAME=`basename $FILE`
@@ -36,19 +36,19 @@ do
   FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $STRIPPED base boxes | awk '/FD =/{print $3}'`
   RESULTS="$RESULTS $FD"
 
-  # Run the stripped with indent styles
-  for STYLE in "$GNU" "$KR" "$BERKELEY" "$LINUX"
-  do
-    INDENTED=${STRIPPED}.indent
-    
-    /usr/local/bin/gindent $STYLE $STRIPPED -o $INDENTED
-    
-    FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $INDENTED base boxes | awk '/FD =/{print $3}'`
-    
-    RESULTS="$RESULTS $FD"
-    
-    rm $INDENTED
-  done
+#  # Run the stripped with indent styles
+#  for STYLE in "$GNU" "$KR" "$BERKELEY" "$LINUX"
+#  do
+#    INDENTED=${STRIPPED}.indent
+#    
+#    /usr/local/bin/gindent $STYLE $STRIPPED -o $INDENTED
+#    
+#    FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $INDENTED base boxes | awk '/FD =/{print $3}'`
+#    
+#    RESULTS="$RESULTS $FD"
+#    
+#    rm $INDENTED
+#  done
   
   rm $STRIPPED
   

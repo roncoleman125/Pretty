@@ -84,7 +84,7 @@ object Imagery {
       if (len > width) len else width
     }
 
-    val fdi = new Imagery(lines, width)
+    val fdi = new Imagery(lines, width, true)
     
     if(save)
       ImageIO.write(fdi,"png",new File(path+".png"))

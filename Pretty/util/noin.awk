@@ -8,7 +8,7 @@ BEGIN {
 {
 lottery = rand()
 
-if(lottery < 0.25)
+if(lottery < 0.75)
   print trim($0)
 else
   print $0
