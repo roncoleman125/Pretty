@@ -33,7 +33,7 @@ do
   RESULTS="$NAME $LC "
   
   # Run the stripped WITHOUT indent styles
-  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $STRIPPED base boxes | awk '/FD =/{print $3}'`
+  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $STRIPPED base util/c.config | awk '/FD =/{print $3}'`
   RESULTS="$RESULTS $FD"
 
 #  # Run the stripped with indent styles

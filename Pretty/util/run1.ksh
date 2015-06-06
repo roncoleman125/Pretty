@@ -16,7 +16,7 @@ do
   echo -n $SAMPLE " "
   awk -f ../util/noin.awk ../data/$FILE > $FILE.noin
 
-  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze ${FILE}.noin base boxes | awk '/FD =/{print $3}'`
+  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze ${FILE}.noin base util/c.config | awk '/FD =/{print $3}'`
 
   echo $FD | tee -a $OUTPUT_FILE
 done

@@ -36,6 +36,7 @@ import javax.imageio.ImageIO
 import pretty.util.ImageryReadyImage
 import java.io.File
 import pretty.util.Constants
+import pretty.util.Config
 
 object Analyze {
   def main(args: Array[String]): Unit = {
@@ -45,8 +46,8 @@ object Analyze {
     // Stress method
     val method = args(1)
     
-    // FD measure
-    val measure = args(2)
+    // Fractal dimension measurement specification
+    val measure = Config.getInstance(args(2)).measure
     
     if(Constants.verbose) println("analyzing "+path+" with "+method+ " and "+measure)    
     val fdi = Imagery.getInstance(path,method)

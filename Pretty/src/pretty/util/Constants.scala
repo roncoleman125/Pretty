@@ -32,4 +32,5 @@ object Constants {
   val TAB_STOP = 4
   val MIN_SYMBOL_SIZE = 3
   val MIN_SYMBOL_FREQUENCY = 3
+  val DEFAULT_MEASURE = "boxes"
 }

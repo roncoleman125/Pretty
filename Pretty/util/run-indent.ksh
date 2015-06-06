@@ -29,7 +29,7 @@ do
   do
     INDENTED=${FILE}.indent
     /usr/local/bin/gindent $STYLE $FILE -o $INDENTED
-    FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $INDENTED base boxes | awk '/FD =/{print $3}'`
+    FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $INDENTED base util/c.config | awk '/FD =/{print $3}'`
     RESULTS="$RESULTS $FD"
     rm $INDENTED
   done

@@ -17,7 +17,7 @@ do
   RESULTS="$NAME $LC "
   for METHOD in base 0 20 40 nm beau
   do
-    FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $FILE $METHOD boxes | awk '/FD =/{print $3}'`
+    FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $FILE $METHOD util/c.config | awk '/FD =/{print $3}'`
     RESULTS="$RESULTS $FD"
   done
   END=`date +%T`

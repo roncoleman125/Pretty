@@ -32,80 +32,86 @@ import scala.io.Source
 import pretty.util.Constants
 import java.math.BigInteger
 import java.util.prefs.Base64
+import pretty.util.Config
 
 object Mango {
-  val keywords = List(
-      "auto",
-      "break",
-      "bool",
-      "case",
-      "char",
-      "const",
-      "continue",
-      "default",
-      "do",
-      "double",
-      "else",
-      "enum",
-      "extern",
-      "float",
-      "for",
-      "goto",
-      "if",
-      "int",
-      "long",
-      "register",
-      "return",
-      "short",
-      "signed",
-      "sizeof",
-      "static",
-      "struct",
-      "switch",
-      "typedef",
-      "union",
-      "unsigned",
-      "void",
-      "volatile",
-      "while",
-      "true",
-      "false",
-      // Compiler directives
-      "define",
-      "include",
-      "ifdef",
-      "ifndef",
-      "endif",
-      "elif",
-      "undef",
-      "warning",
-      "line",
-      "pragma",
-      // C-library
-      "NULL",
-      "size_t",
-      "printf",
-      "sprintf",
-      "fprintf",
-      "open",
-      "close",
-      "fopen",
-      "fclose",
-      "fputs",
-      "fgets",
-      "stdout",
-      "stdin",
-      "stderr",
-      "free",
-      "malloc",
-      "main",
-      // Miscellaneous
-      "argc",
-      "argv"
-  )
+//  val keywords = List(
+//      "auto",
+//      "break",
+//      "bool",
+//      "case",
+//      "char",
+//      "const",
+//      "continue",
+//      "default",
+//      "do",
+//      "double",
+//      "else",
+//      "enum",
+//      "extern",
+//      "float",
+//      "for",
+//      "goto",
+//      "if",
+//      "int",
+//      "long",
+//      "register",
+//      "return",
+//      "short",
+//      "signed",
+//      "sizeof",
+//      "static",
+//      "struct",
+//      "switch",
+//      "typedef",
+//      "union",
+//      "unsigned",
+//      "void",
+//      "volatile",
+//      "while",
+//      "true",
+//      "false",
+//      // Compiler directives
+//      "define",
+//      "include",
+//      "ifdef",
+//      "ifndef",
+//      "endif",
+//      "elif",
+//      "undef",
+//      "warning",
+//      "line",
+//      "pragma",
+//      // C-library
+//      "NULL",
+//      "size_t",
+//      "printf",
+//      "sprintf",
+//      "fprintf",
+//      "open",
+//      "close",
+//      "fopen",
+//      "fclose",
+//      "fputs",
+//      "fgets",
+//      "stdout",
+//      "stdin",
+//      "stderr",
+//      "free",
+//      "malloc",
+//      "main",
+//      // Miscellaneous
+//      "argc",
+//      "argv"
+//  )
   
-  val delims = "[ \\\\}\\{\\]\\[*\\-+\\|/\\?\\.><=%\\$#!\\^&)(,:;]"
+//  val delims = "[ \\\\}\\{\\]\\[*\\-+\\|/\\?\\.><=%\\$#!\\^&)(,:;]"
+  
+  // Language keywords to skip
+  val keywords = Config.getInstance().keywords
 
+  // Language delimiters
+  val delims = Config.getInstance().delims
   
   def main(args:Array[String]): Unit = { 
     val mango = new Mango(args(0))
@@ -124,6 +130,7 @@ object Mango {
   }
 }
 
+/** This class implement the "mangling" code */
 class Mango(path: String) {
   // Transform method of symbol to mango symbol
   val TRANSFORM: List[(String,Int)] => HashMap[String,String] = underbarSymbolize
@@ -135,7 +142,7 @@ class Mango(path: String) {
     // Remove tabs and strings
     if(Constants.verbose) println("removing strings and tabs...")
     val lines = filterStrings(filterTabs(Source.fromFile(path).getLines().toList))
-     if(Constants.verbose) lines.foreach(p => println(p))
+//    if(Constants.verbose) lines.foreach(p => println(p))
        
     // Get only symbols of a given length or longer
     if(Constants.verbose) println("removing comments...")
@@ -157,6 +164,7 @@ class Mango(path: String) {
     trans
   }
   
+  /** Get the mappings: old symbols -> new symbol */
   def getMappings(path: String, symLenFilter: ((String,Int)) => Boolean, symFreqFilter: ((String,Int)) => Boolean ): HashMap[String,String] = {
     if(Constants.verbose) println("creating mangos from "+path)
     
@@ -199,7 +207,8 @@ class Mango(path: String) {
   }
   
   
-   def doubleLengthSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
+  /** Returns the mapping from old symbol -> new symbol double length */
+  def doubleLengthSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
     (0 until symtab.length).foldLeft(HashMap[String,String]()) { (newTable, k) =>
       val oldSym = symtab(k)._1
       val newSym = oldSym.length match {
@@ -217,7 +226,7 @@ class Mango(path: String) {
     }
   }
   
-    /** Returns the transformation table */
+  /** Returns the mapping from old symbol -> new symbol with underbar */
   def underbarSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
     if(Constants.verbose) {
     val easies = symtab.foldLeft(0) { (count, sym) =>
@@ -275,7 +284,7 @@ class Mango(path: String) {
     }
   }
   
-  /** Returns new symbols as symbol plus count */
+  /** Returns the mapping from old symbol -> new symbol with count as part of name */
   def countSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
     (0 until symtab.length).foldLeft(HashMap[String,String]()) { (newTable, k) =>
       val oldSym = symtab(k)._1
@@ -285,7 +294,7 @@ class Mango(path: String) {
       }
   }
   
-  /** Returns new symbols as symbol cut in half */
+  /** Returns the mapping from old symbol -> new symbol reduced by half */
   def halfSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
     symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
       val oldSym = sym._1
@@ -396,6 +405,7 @@ class Mango(path: String) {
     output._2
   }
   
+  /** Filters comments from a list of strings */
   def filterComments(lines: List[String]): List[String] = {   
     // /* block comment */ code
     val SCENARIO_A = """/\*.*\*/(.*)""".r
@@ -471,11 +481,13 @@ class Mango(path: String) {
     output._2
   }
   
+  /** Checks state of processing */
   def checkState(actual: Boolean, expected: Boolean,lineno: Int) {
     if(actual != expected)
       Console.err.println("warning detected possible bad block comment: line "+lineno)
   }
   
+  /** Logs the symbol table verbose */
   def report(symtab: List[(String,Int)]) {
     val easies = symtab.foldLeft(0) { (count, sym) =>
       if(sym._1.contains("_"))
@@ -498,6 +510,7 @@ class Mango(path: String) {
     }
   }
   
+  /** Logs the symbols table */
   def report(trans: HashMap[String,String]) {
     println("trans table:")
     trans.foreach { p =>
