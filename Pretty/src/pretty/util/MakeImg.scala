@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Sclastic Contributors
+ * Copyright (c) Pretty Contributors
  * See CONTRIBUTORS.TXT for a full list of copyright holders.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package pretty
+package pretty.util
 
 import java.awt.Color
 import java.awt.Font
@@ -35,12 +35,18 @@ import scala.io.Source
 
 import javax.imageio.ImageIO
 
+/**
+ * This class measures the fractal dimension of an image file.
+ * @author Ron Coleman
+ */
 object MakeImg {
   val POINT_SIZE = 10
   val LINE_HEIGHT = POINT_SIZE
   
   def main(args: Array[String]): Unit = {
-    val lines = Source.fromFile("").getLines().toList
+    // Compute the width and height of the file
+    val filename = args(0)
+    val lines = Source.fromFile(filename).getLines().toList
     
     val width = lines.foldLeft(0) { (width, line) =>
       val len = line.length
@@ -50,13 +56,18 @@ object MakeImg {
     val w = width * POINT_SIZE
     val h = lines.length * LINE_HEIGHT
     
+    // Create a blank image of these dimensions
     val bimg = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
 
+    // Write the image in a given font
     val g = bimg.createGraphics()
 
     g.setColor(Color.white)
+    
     g.fillRect(0, 0, width * POINT_SIZE, lines.length * LINE_HEIGHT)
+    
     println("w = " + width * POINT_SIZE + " h = " + lines.length * LINE_HEIGHT)
+    
     g.setColor(Color.black);
     
     g.setFont(new Font("Courier New", Font.PLAIN, POINT_SIZE))
@@ -71,6 +82,7 @@ object MakeImg {
       y + LINE_HEIGHT
     }
     
-    ImageIO.write(bimg,"png",new File("x6-code.png"))
+    // Save the image as a PNG
+    ImageIO.write(bimg,"png",new File(filename+".png"))
   }
 }

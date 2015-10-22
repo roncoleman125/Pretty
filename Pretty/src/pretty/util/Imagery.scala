@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Sclastic Contributors
+ * Copyright (c) Pretty Contributors
  * See CONTRIBUTORS.TXT for a full list of copyright holders.
  *
  * Redistribution and use in source and binary forms, with or without
