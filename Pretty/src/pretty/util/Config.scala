@@ -62,6 +62,13 @@ object Config {
  * This class contains the configuration.
  */
 class Config(path: String) {
+  /** Get for artefact type, literal or block */
+  def isLiteral: Boolean = {
+    val arts = load("pretty.artefact")
+    
+    arts.length == 0 || arts(0) == Constants.LITERAL
+  }
+  
   /** Gettor for keywords */
   def keywords: List[String] ={
     load("pretty.keyword")

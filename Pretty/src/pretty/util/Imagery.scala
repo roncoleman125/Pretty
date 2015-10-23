@@ -84,7 +84,7 @@ object Imagery {
       if (len > width) len else width
     }
 
-    val fdi = new Imagery(lines, width, true)
+    val fdi = new Imagery(lines, width, Config.getInstance().isLiteral)
     
     if(save)
       ImageIO.write(fdi,"png",new File(path+".png"))
@@ -107,9 +107,9 @@ class ImageryReadyImage(bimg: BufferedImage) extends fdimage(bimg.getWidth,bimg.
  * Makes a fractal dimension image from a set of lines.
  * @param lines Lines to image-ize
  * @param width Image width (i.e., the longest line length)
- * @param useText Set to true to write text instead of blocks
+ * @param literal Set to true to write text instead of blocks
  */
-class Imagery(lines: List[String], width: Int, useText: Boolean = false) extends fdimage(width * Imagery.POINT_SIZE, lines.length * Imagery.LINE_HEIGHT, true) {
+class Imagery(lines: List[String], width: Int, literal: Boolean = false) extends fdimage(width * Imagery.POINT_SIZE, lines.length * Imagery.LINE_HEIGHT, true) {
   val g = createGraphics
   
   // Draw white background
@@ -127,7 +127,7 @@ class Imagery(lines: List[String], width: Int, useText: Boolean = false) extends
 
   // Write out image
   lines.foldLeft(0) { (y, line) =>
-    if(useText)
+    if(literal)
       g.drawString(line, 0, y)
     else {
       line.foldLeft(0) { (x, c) =>

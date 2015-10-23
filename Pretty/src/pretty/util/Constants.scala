@@ -32,5 +32,8 @@ object Constants {
   val TAB_STOP = 4
   val MIN_SYMBOL_SIZE = 3
   val MIN_SYMBOL_FREQUENCY = 3
+  val BLOCK = "block"
+  val LITERAL = "literal"
   val DEFAULT_MEASURE = "boxes"
+  val DEFAULT_ARTEFACT = BLOCK
 }

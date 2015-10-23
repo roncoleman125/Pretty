@@ -80,7 +80,9 @@ object Analyze {
 
     val slope = fdr.CalcLogSlope
 
-    println("FD = " + slope)
+    val m = Cyclomatic.em(path)
+    
+    println("FD = " + slope + " M = "+m)
   }
 }
 
