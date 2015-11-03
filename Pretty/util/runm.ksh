@@ -8,7 +8,7 @@ rm $OUTPUT_FILE
 
 # Assumes we're in util folder
 cd ../bin
-INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/sort-ronz"
+INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
 for FILE in $INPUT_DIR/*.c
 do
   START=`date +%T`
@@ -16,9 +16,10 @@ do
   echo $NAME
   LC=`wc -l $FILE|awk '{print$1}'`
   RESULTS="$NAME $LC "
-  for METHOD in base # 0 20 40 nm beau
+  for METHOD in em base 0 20 40 nm beau
   do
-    FDM=`scala -cp ".:../fractop-0.3b.jar:../antlr-4.5.1-complete.jar:../cg4.jar" pretty.Analyze $FILE $METHOD ../util/c.config | awk '/FD =/{print $3, $6}'`
+    FDM=`scala -cp ".:../fractop-0.3b.jar:../antlr-4.5.1-complete.jar:../cg4.jar" pretty.Analyze $FILE $METHOD ../util/c.config |
+    	awk '/FD =/||/M =/{print $3}'`
     RESULTS="$RESULTS $FDM"
   done
   END=`date +%T`

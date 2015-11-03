@@ -46,12 +46,18 @@ object Analyze {
     // Stress method
     val method = args(1)
     
+    // If stress is M, then just process it and we're done
+    if(method == "em") {
+      val m = Cyclomatic.em(path)
+      println("M = "+m)
+      System.exit(0)
+    }
+    
     // Fractal dimension measurement specification
     val measure = Config.getInstance(args(2)).measure
     
     if(Constants.verbose) println("analyzing "+path+" with "+method+ " and "+measure)    
     val fdi = Imagery.getInstance(path,method)
-
 
     val fdr = new fdresult(true)
    
@@ -80,9 +86,7 @@ object Analyze {
 
     val slope = fdr.CalcLogSlope
 
-    val m = Cyclomatic.em(path)
-    
-    println("FD = " + slope + " M = "+m)
+    println("FD = " + slope)
   }
 }
 

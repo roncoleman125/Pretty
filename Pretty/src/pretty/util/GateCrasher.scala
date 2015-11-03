@@ -50,12 +50,27 @@ case class IO(path: String, outdir: String)
 object GateCrasher {
   
   def main(args: Array[String]): Unit = {
+    if(args.length < 2) {
+      println("usage: GateCrasher input-dir output-dir")
+      System.exit(1)
+    }
+    
     // Input file
-    val path = args(0)
+    val indir = args(0)
     
     // Output directory
     val outdir = args(1)
     
+    val fileNames = getFiles(indir)
+    
+    fileNames.foreach { f =>
+      fragment(f,outdir)
+    }
+
+  }
+  
+  def fragment(path: String, outdir: String): Unit = {
+    println(path)
     val io = IO(path,outdir)
     
     // Process each line and flush the annotated sections
@@ -113,7 +128,7 @@ object GateCrasher {
     
     val(admit, buffer, k) = terminated
     
-    flush(Data(admit, buffer, k), io)
+    flush(Data(admit, buffer, k), io)    
   }
   
   def flush(data: Data, io: IO): Unit = {
@@ -128,5 +143,10 @@ object GateCrasher {
     
     pw.flush
     pw.close
+  }
+
+  def getFiles(dir: String): List[String] = {
+    val root = new File(dir)
+    root.listFiles.filter(_.isFile()).map { f => f.getAbsolutePath }.toList
   }
 }
