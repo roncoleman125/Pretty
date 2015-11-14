@@ -123,7 +123,7 @@ object Mango {
     
     // Get only symbols of a given frequency or higher
     val symtab =  mango.buildSymbolTable(nocomments).
-      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_FREQUENCY).
+      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_SIZE).
         sortWith(_._1.length > _._1.length)  
         
     val trans =  mango.underbarSymbolize(symtab)
@@ -153,7 +153,7 @@ class Mango(path: String) {
     // that some symbols may be contained in others.
     if(Constants.verbose) println("building symbol table...")
     val symtab = buildSymbolTable(nocomments).
-      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_FREQUENCY).filter(t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY).
+      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_SIZE).filter(t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY).
         sortWith(_._1.length > _._1.length)  
         
     if(Constants.verbose) println("building transformation table...")
