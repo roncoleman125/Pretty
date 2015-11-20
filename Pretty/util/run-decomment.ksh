@@ -7,6 +7,7 @@ PATH=$SCALA_BIN:$PATH
 
 DAY=`date +%Y%m%d`
 OUTPUT_FILE=~/tmp/decom-${DAY}.txt
+INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
 
 rm $OUTPUT_FILE
 
@@ -19,11 +20,11 @@ LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -d
 
 # Assumes we're in util folder
 cd ../bin
-for FILE in ../data/*.c
+for FILE in $INPUT_DIR/*.c
 do
   START=`date +%T`
   NAME=`basename $FILE`
-  echo $NAME
+#  echo $NAME
   
   STRIPPED=${FILE}.stripped
   #scala -cp "." pretty.Decomment $FILE base boxes > $STRIPPED
@@ -33,7 +34,7 @@ do
   RESULTS="$NAME $LC "
   
   # Run the stripped WITHOUT indent styles
-  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $STRIPPED base util/c.config | awk '/FD =/{print $3}'`
+  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $STRIPPED base ../util/c.config | awk '/FD =/{print $3}'`
   RESULTS="$RESULTS $FD"
 
 #  # Run the stripped with indent styles
@@ -43,7 +44,7 @@ do
 #    
 #    /usr/local/bin/gindent $STYLE $STRIPPED -o $INDENTED
 #    
-#    FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $INDENTED base boxes | awk '/FD =/{print $3}'`
+#    FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $INDENTED base boxes | awk '/FD =/{print $3}'`
 #    
 #    RESULTS="$RESULTS $FD"
 #    

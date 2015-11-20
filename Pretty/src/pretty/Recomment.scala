@@ -40,13 +40,13 @@ object Recomment {
     
     // Calculate number of comments to add as a fraction of number of lines but...
     // we'll add at least one comment
-    val numComments = ran.nextInt((lines.length * COMMENT_PROB).toInt) max 1
+    val numComments = ran.nextInt((lines.length * COMMENT_PROB).ceil.toInt) max 1
     
-    // Generate places to insert comments
+    // Choose place to put comment
     // If insert points collide this will reduce total number of comments
     val insertPoints = for(i <- (0 until numComments)) yield ran.nextInt(lines.length)
 
-    // Generate random comments to retrieve
+    // Chosse the comment
     val retrievalPoints = for(i <- (0 until insertPoints.length)) yield ran.nextInt(entries.length)
     
     // Build map of insert line number to comment number
