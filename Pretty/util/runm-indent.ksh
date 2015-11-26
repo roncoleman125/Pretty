@@ -16,7 +16,7 @@ KR='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -cp33 -cs -d0 
 BERKELEY='-bbo -nbad -nbap -bc -br -brs -c33 -cd33 -cdb -ce -ci4 -cli0 -cp33 -di16 -fc1 -fca -hnl -i4 -ip4 -l75 -lp -npcs -nprs -psl -saf -sai -saw -sc -nsob -nss -ts8'
 LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1'
 
-INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/demo"
+INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/gnu"
 
 # Assumes we're in util folder
 cd ../bin
@@ -31,8 +31,9 @@ do
   do
     INDENTED=${FILE}.indent
     /usr/local/bin/gindent $STYLE $FILE -o $INDENTED
+    LC=`wc -l $INDENTED|awk '{print$1}'`
     FD=`scala -cp ".:../fractop-0.3b.jar:../antlr-4.5.1-complete.jar:../cg4.jar" pretty.Analyze $INDENTED beau ../util/c.config | awk '/FD =/{print $3}'`
-    RESULTS="$RESULTS $FD"
+    RESULTS="$RESULTS $FD $LC"
     rm $INDENTED
   done
   END=`date +%T`

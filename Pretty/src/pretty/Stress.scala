@@ -83,11 +83,17 @@ class Stress(path: String) {
 
   /** Randomizes the indent. */
   def randomIndent(n: Int): List[String] = {
-    val ran = new Random
     val lines = Source.fromFile(path).getLines().toList
+    
+    val seed = Recomment.checksum(lines) + n
+    
+    val ran = new Random(seed)
+    
     lines.map { line =>
       val r = ran.nextInt(n)
+      
       val indent = (1 to r).foldLeft("") { (xs, x) => xs + " " }
+      println(indent + line)
       indent + line
     }
   }
