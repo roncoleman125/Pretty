@@ -27,7 +27,7 @@
 package pretty.util
 
 object Constants {
-  val verbose = true
+  val verbose = false
   
   val TAB_STOP = 4
   val MIN_SYMBOL_SIZE = 3

@@ -40,6 +40,8 @@ import pretty.util.Config
 
 object Analyze {
   def main(args: Array[String]): Unit = {
+    val t0 = System.currentTimeMillis
+    
     // Path to source file
     val path = args(0)
     
@@ -86,7 +88,9 @@ object Analyze {
 
     val slope = fdr.CalcLogSlope
 
-    println("FD = " + slope)
+    val t1 = System.currentTimeMillis
+    
+    println("FD = " + slope+" dt = "+(t1-t0)/1000.0)
   }
 }
 
