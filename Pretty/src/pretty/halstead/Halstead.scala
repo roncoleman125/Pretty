@@ -121,24 +121,38 @@ class MyParserListener extends ParseTreeListener {
     if(!func)
       return
     
-    if(isNumber(token) || isString(token)) {
-      val count = operands.getOrElse(token,0)
-      operands(token) = count + 1
-    }
-    else if(isIdentifier(token)) {
-      val count = operands.getOrElse(token,0)
-      operands(token) = count + 1
-      expr = false
-    }
-    else if(isFunction(token) && postfix) {
-      val count = operands.getOrElse(token,0)
-      operands(token) = count + 1
-      postfix = false
-    }
+//    if(isNumber(token) || isString(token)) {
+//      val count = operands.getOrElse(token,0)
+//      operands(token) = count + 1
+//    }
+//    else if(isIdentifier(token)) {
+//      val count = operands.getOrElse(token,0)
+//      operands(token) = count + 1
+//      expr = false
+//    }
+//    else if(isFunction(token) && postfix) {
+//      val count = operands.getOrElse(token,0)
+//      operands(token) = count + 1
+//      postfix = false
+//    }
 
     val parent = arg.getParent
 
     token match {
+      case token if isNumber(token) || isString(token) =>
+        val count = operands.getOrElse(token,0)
+        operands(token) = count + 1
+      
+      case token if isIdentifier(token) =>
+        val count = operands.getOrElse(token,0)
+        operands(token) = count + 1
+        expr = false
+      
+      case token if isFunction(token) && postfix =>
+        val count = operands.getOrElse(token,0)
+        operands(token) = count + 1
+        postfix = false
+        
       case ("*" | "-" | "--" | "++" ) if unaryOp =>
           val key = "UNARY" + token
           val states = parent.toStringTree()
@@ -176,7 +190,6 @@ class MyParserListener extends ParseTreeListener {
         
       case _ =>
     }
-//    println(token)
   }
   
   def isNumber(s: String) = s(0).isDigit
