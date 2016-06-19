@@ -13,6 +13,8 @@ import org.antlr.v4.runtime.ParserRuleContext
 import scala.collection.mutable.HashMap
 
 object Halstead {
+  val LOG2 = Math.log(2)
+  
   def main(args: Array[String]): Unit = {
     val in = new FileInputStream(args(0))
     
@@ -41,6 +43,51 @@ object Halstead {
       val (token, freq) = e
       println("%s\t\t%d".format(token,freq))
     }
+    
+    // Compute program length
+    val N1 = listener.operators.values.sum
+    val N2 = listener.operands.values.sum
+    val N = N1 + N2
+    
+    // Compute program vocabulary
+    val n1 = listener.operators.keySet.size
+    val n2 = listener.operands.keySet.size
+    val n = n1 + n2
+    
+    // Compute volume
+
+    val V = N * Math.log(n) / LOG2
+    
+    // Compute difficulty
+    val D = n1 * N2 / (2.toDouble * n2)
+    
+    // Compute effort
+    val E = D * V
+    
+
+    val H = 0
+    println("%-10s %6s %6s %6s %6s %6s %6s".format("File","Len","Voc","Vol","Dif","Eff","H"))
+    println("%-10s %6d %6d %6.1f %6.1f %6.1f %6.1f".format(basename(args(0)),N,n,V,D,E,H))
+  }
+  
+  def entropy(map: HashMap[String,Int]): Double = {
+    val total = map.values.sum
+    val H = map.foldLeft(0.0) { (sum,tokenCount) =>
+      val (token,count) = tokenCount
+      
+      val p = count / total.toDouble
+      sum - p * Math.log(p) / LOG2
+    }   
+    
+    H
+  }
+  
+  def basename(s: String): String = {
+    val j = s.lastIndexOf('/')
+    if(j == -1)
+      s
+    else
+      s.substring(j+1)
   }
 }
 
@@ -149,7 +196,7 @@ class HalsteadParserListener extends ParseTreeListener {
   def visitTerminal(arg: TerminalNode): Unit = {  
     // TODO: arrays
     // TODO: nested expressions
-    // TODO: multiple unary expressions
+    // TODO: multiple unary expressions, eg, i++ + -j + *--p
     val token = arg.getText
     
     println("token = "+token)
@@ -190,14 +237,14 @@ class HalsteadParserListener extends ParseTreeListener {
       case ("*" | "-" | "--" | "++" ) if isUnaryOpContext =>
           val key = "UNARY" + token
           val states = parent.toStringTree()
-          val op = parent.getChild(1)
+          val op = parent.getChild(numChildren-1)
           val count = operators.getOrElse(key,0)
           operators(key) = count + 1         
           isUnaryOpContext = false    
           
       case "++" | "--" if isPostfixContext =>
           val key = token + "UNARY"
-          val op = parent.getChild(1)
+          val op = parent.getChild(numChildren-1)
           val count = operators.getOrElse(key,0)
           operators(key) = count + 1 
           isPostfixContext = true
