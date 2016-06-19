@@ -24,7 +24,7 @@ object Halstead {
     
     val parser = new CParser(tokens)
 
-    val listener = new MyParserListener
+    val listener = new HalsteadParserListener
 
     parser.addParseListener(listener)
 
@@ -44,16 +44,68 @@ object Halstead {
   }
 }
 
-class MyParserListener extends ParseTreeListener {
-  val decisions = new HashMap[String,Int]()
+class HalsteadParserListener extends ParseTreeListener {
   val operators = new HashMap[String,Int]()
   val operands = new HashMap[String,Int]()
-  var unaryOp = false
-  var declar = false
-  var expr = false
-  var func = false
-  var postfix = false
-  val keyWords = List("for", "char", "int")
+  val tokens = new HashMap[String,Int]()
+  val chars = new HashMap[String,Int]()
+  var isUnaryOpContext = false
+  var isDeclarContext = false
+  var isExprContext = false
+  var compoundSttDepth = 0
+  var isPostfixContext = false
+  
+  // C keywords
+  val kws = List(
+      "auto",
+      "break",
+      "bool",
+      "case",
+      "char",
+      "const",
+      "continue",
+      "default",
+      "do",
+      "double",
+      "else",
+      "enum",
+      "extern",
+      "float",
+      "for",
+      "goto",
+      "if",
+      "int",
+      "long",
+      "register",
+      "return",
+      "short",
+      "signed",
+      "sizeof",
+      "static",
+      "struct",
+      "switch",
+      "typedef",
+      "union",
+      "unsigned",
+      "void",
+      "volatile",
+      "while",
+      "true",
+      "false",
+      // Compiler directives
+      "define",
+      "include",
+      "ifdef",
+      "ifndef",
+      "endif",
+      "elif",
+      "undef",
+      "warning",
+      "line",
+      "pragma"
+  )
+  val keyWords = HashMap[String,String]()
+  kws.foreach { kw => keyWords(kw) = kw}
   
   def enterEveryRule(arg: ParserRuleContext): Unit = {
     val const = arg.isInstanceOf[CParser.ConstantExpressionContext]
@@ -63,130 +115,112 @@ class MyParserListener extends ParseTreeListener {
     
     arg match {
       case node: CParser.UnaryOperatorContext =>
-        unaryOp = true
+        isUnaryOpContext = true
         println("GOT UNARY!")
         
       case node: CParser.ExpressionContext =>
-        expr = true
+        isExprContext = true
         println("GOT EXPR!")
         
       case node: CParser.InitDeclaratorContext =>
-        declar = true
-        println("GOT DECLAR!")
+        isDeclarContext = true
+        println("GOT INIT DECLAR!")
+        
+//      case node: CParser.DeclarationContext =>
+//        isDeclarContext = true
+//        println("GOT DECLAR!")
         
       case node: CParser.CompoundStatementContext =>
-        func = true
+        compoundSttDepth += 1
         println("GOT COMPOUND!")
         
       case node: CParser.PostfixExpressionContext =>
-        postfix = true
+        isPostfixContext = true
         println("GOT POSTFIX!")
         
       case _ =>
     }
-//    
-//    if(arg.isInstanceOf[CParser.UnaryOperatorContext]) {
-//      unaryOp = true
-//      println("got unary!")
-//    }
-//    else if(arg.isInstanceOf[CParser.InitDeclaratorContext]) {
-//      declar = true
-//      println("got declar!")
-//    }
-//    else if(arg.isInstanceOf[CParser.ExpressionContext])  {
-//      expr = true
-//      println("got expr!")
-//    }
-//    
-//    if(arg.isInstanceOf[CParser.CompoundStatementContext])  {
-//      func = true
-//      println("GOT FUNC!")
-//    }
-//    
-//    if(arg.isInstanceOf[CParser.PostfixExpressionContext])  {
-//      postfix = true
-//      println("GOT POSTFIX!")
-//    }    
   }
   
   def exitEveryRule(arg: ParserRuleContext): Unit = {}
   
   def visitErrorNode(arg: ErrorNode): Unit = {}
   
-  def visitTerminal(arg: TerminalNode): Unit = {     
+  def visitTerminal(arg: TerminalNode): Unit = {  
+    // TODO: arrays
+    // TODO: nested expressions
+    // TODO: multiple unary expressions
     val token = arg.getText
     
     println("token = "+token)
     
-    if(!func)
+    val numTokens = tokens.getOrElse(token, 0)
+    tokens(token) = numTokens + 1
+    
+    val numChars = chars
+    token.foreach { c =>
+      val s = c.toString
+      val numChars = chars.getOrElse(s, 0)
+      chars(s) = numChars + 1
+    }
+    
+    // Process only with context of a function or procedure
+    if(compoundSttDepth == 0)
       return
     
-//    if(isNumber(token) || isString(token)) {
-//      val count = operands.getOrElse(token,0)
-//      operands(token) = count + 1
-//    }
-//    else if(isIdentifier(token)) {
-//      val count = operands.getOrElse(token,0)
-//      operands(token) = count + 1
-//      expr = false
-//    }
-//    else if(isFunction(token) && postfix) {
-//      val count = operands.getOrElse(token,0)
-//      operands(token) = count + 1
-//      postfix = false
-//    }
-
     val parent = arg.getParent
+    val numChildren = parent.getChildCount
+    val parentText = parent.getText
 
     token match {
       case token if isNumber(token) || isString(token) =>
         val count = operands.getOrElse(token,0)
         operands(token) = count + 1
       
-      case token if isIdentifier(token) =>
+      case token if isIdentifier(token) && isExprContext =>
         val count = operands.getOrElse(token,0)
         operands(token) = count + 1
-        expr = false
+        isExprContext = false
       
-      case token if isFunction(token) && postfix =>
+      case token if isFunction(token) && isPostfixContext =>
         val count = operands.getOrElse(token,0)
         operands(token) = count + 1
-        postfix = false
-        
-      case ("*" | "-" | "--" | "++" ) if unaryOp =>
+        isPostfixContext = false
+          
+      case ("*" | "-" | "--" | "++" ) if isUnaryOpContext =>
           val key = "UNARY" + token
           val states = parent.toStringTree()
           val op = parent.getChild(1)
           val count = operators.getOrElse(key,0)
           operators(key) = count + 1         
-          unaryOp = false    
+          isUnaryOpContext = false    
           
-      case "++" | "--" if postfix =>
+      case "++" | "--" if isPostfixContext =>
           val key = token + "UNARY"
-          val states = parent.toStringTree()
           val op = parent.getChild(1)
           val count = operators.getOrElse(key,0)
           operators(key) = count + 1 
-          postfix = true
+          isPostfixContext = true
           
-      case "=" | "+=" | "*" | "==" | "+" | "||" | "&&" | "." | "->" | "%" | "/" | "<<" | ">>" =>
-        val numChildren = parent.getChildCount
-        if(declar) {
+      case "=" | "*" | "+" | "/" | "<" | ">" | "." | "%" | "&" | "|" | "!" | "^" | "~" |
+           "<=" | ">=" | "==" | "-=" | "+=" | "*=" | "/=" | "%=" |
+           "||" | "&&" | "->" | "<<" | ">>" |
+           "[" | 
+           "?" =>
+
+        if(isDeclarContext) {
+          val key = "INIT"
           val states = parent.toStringTree()
-          val op = parent.getChild(1)
-          val operatorCount = operands.getOrElse("INIT",0)
-          operators("INIT") = operatorCount + 1 
-          declar = false
+          val op = parent.getChild(numChildren-1)
+          val operatorCount = operands.getOrElse(key,0)
+          operators(key) = operatorCount + 1 
+          isDeclarContext = false
         }
-        else if( numChildren > 1) {         
-          val op = parent.getChild(1).getText.trim
-          val m = parent.getChild(1).getChildCount
+        else {         
+          val op = parent.getChild(numChildren-1).getText.trim
           val operatorCount = operators.getOrElse(op,0)
           operators(op) = operatorCount + 1
         }
-        val parentText = parent.getText
-        val count = decisions.getOrElse(token, 0)
-        decisions(token) = count + 1
         
       case _ =>
     }
@@ -197,19 +231,17 @@ class MyParserListener extends ParseTreeListener {
   def isString(s: String) = s.startsWith("\"")
   
   def isIdentifier(s: String): Boolean = {
-    if(!expr)
+    if(/*!isExprContext ||*/ s.length == 0)
       false
     else
-      keyWords.find { word => word == s } match {
-        case Some(w) => false
-        case None => s(0).isLetter
-      }
+      !keyWords.keys.exists(_ == s) && (s(0).isLetter || s(0) == '_')
+//      kws.find { word => word == s } match {
+//        case Some(w) => false
+//        case None => s(0).isLetter || s(0) == '_'
+//      }
   }
   
   def isFunction(s: String): Boolean = {
-    keyWords.find { word => word == s } match {
-      case Some(word) => false
-      case None => s(0).isLetter 
-    }
+    isIdentifier(s)
   }
 }
