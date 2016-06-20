@@ -11,6 +11,7 @@ import cg4.CLexer
 import cg4.CParser
 import org.antlr.v4.runtime.ParserRuleContext
 import scala.collection.mutable.HashMap
+import scala.io.Source
 
 object Halstead {
   val LOG2 = Math.log(2)
@@ -64,22 +65,30 @@ object Halstead {
     // Compute effort
     val E = D * V
     
+    // Compute lines and characters
+    val lines = Source.fromFile(args(0)).getLines.toList
+    val numLines = lines.length
+    val numChars = lines.foldLeft(0) { (sum,line) => sum + line.length() }
+    
+    val numUniqueTokens = listener.tokens.keySet.size
 
-    val H = 0
-    println("%-10s %6s %6s %6s %6s %6s %6s".format("File","Len","Voc","Vol","Dif","Eff","H"))
-    println("%-10s %6d %6d %6.1f %6.1f %6.1f %6.1f".format(basename(args(0)),N,n,V,D,E,H))
+    val hTokens = entropy(listener.tokens)
+    val hChars = entropy(listener.chars)
+    println("%-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s".
+        format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char"))
+    println("%-10s %6d %6d %6d %6d %6.1f %6.1f %6.1f %6.1f %6d %6.1f".format(basename(args(0)),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars))
   }
   
   def entropy(map: HashMap[String,Int]): Double = {
     val total = map.values.sum
-    val H = map.foldLeft(0.0) { (sum,tokenCount) =>
-      val (token,count) = tokenCount
+    val h = map.foldLeft(0.0) { (sum,itemCount) =>
+      val (item,count) = itemCount
       
       val p = count / total.toDouble
       sum - p * Math.log(p) / LOG2
     }   
     
-    H
+    h
   }
   
   def basename(s: String): String = {
