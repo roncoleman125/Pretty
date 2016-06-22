@@ -7,8 +7,8 @@ import org.antlr.v4.runtime.tree.ParseTreeListener
 import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.TerminalNode
-import cg4.CLexer
-import cg4.CParser
+import cgrammar.CLexer
+import cgrammar.CParser
 import org.antlr.v4.runtime.ParserRuleContext
 import scala.collection.mutable.HashMap
 import scala.io.Source
@@ -74,9 +74,14 @@ object Halstead {
 
     val hTokens = entropy(listener.tokens)
     val hChars = entropy(listener.chars)
-    println("%-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s".
-        format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char"))
-    println("%-10s %6d %6d %6d %6d %6.1f %6.1f %6.1f %6.1f %6d %6.1f".format(basename(args(0)),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars))
+    
+    val z = 8.87 - 0.033*V + 0.40*numLines - 1.5*hTokens
+    val logit = 1.0 / (1 + Math.exp(-z))
+    
+    println("%-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s".
+        format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char","z","logit"))
+    println("%-10s %6d %6d %6d %6d %6.1f %6.1f %6.1f %6.1f %6d %6.1f %6.2f %6.4f".
+        format(basename(args(0)),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars,z,logit))
   }
   
   def entropy(map: HashMap[String,Int]): Double = {
@@ -300,4 +305,14 @@ class HalsteadParserListener extends ParseTreeListener {
   def isFunction(s: String): Boolean = {
     isIdentifier(s)
   }
+}
+
+class DudParserListener extends ParseTreeListener {
+  def enterEveryRule(arg: ParserRuleContext): Unit = {
+  }
+  def exitEveryRule(arg: ParserRuleContext): Unit = {}
+  
+  def visitErrorNode(arg: ErrorNode): Unit = {}
+  
+  def visitTerminal(arg: TerminalNode): Unit = {}
 }

@@ -7,8 +7,8 @@ import org.antlr.v4.runtime.tree.ParseTreeListener
 import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.TerminalNode
-import cg4.CLexer
-import cg4.CParser
+import cgrammar.CLexer
+import cgrammar.CParser
 import org.antlr.v4.runtime.ParserRuleContext
 import scala.collection.mutable.HashMap
 
