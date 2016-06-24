@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) Pretty Contributors
+ * See CONTRIBUTORS.TXT for a full list of copyright holders.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Scaly Project nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE DEVELOPERS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package pretty.halstead
 
 import java.io.FileInputStream
@@ -12,13 +38,21 @@ import cgrammar.CParser
 import org.antlr.v4.runtime.ParserRuleContext
 import scala.collection.mutable.HashMap
 import scala.io.Source
+import pretty.util.Helper
 
 object Halstead {
   val LOG2 = Math.log(2)
   
   def main(args: Array[String]): Unit = {
-    val in = new FileInputStream(args(0))
+    args.foreach {
+      path => process(path)
+    }
+  }
+  
+  def process(path: String): Unit = {
+    val in = new FileInputStream(path)
     
+    // Get tne ANTLR parser loaded
     val input = new ANTLRInputStream(in)
 
     val lexer = new CLexer(input)
@@ -31,18 +65,19 @@ object Halstead {
 
     parser.addParseListener(listener)
 
+    // Process only function definitions
     parser.functionDefinition
    
-    println("%s\t%s".format("OPERATOR","N"))
+    Helper.log("%s\t%s".format("OPERATOR","N"))
     listener.operators.foreach { e =>
       val (token, freq) = e
-      println("%s\t\t%d".format(token,freq))
+      Helper.log("%s\t\t%d".format(token,freq))
     }
     
-    println("\n%s\t\t%s".format("OPERAND","N"))
+    Helper.log("\n%s\t\t%s".format("OPERAND","N"))
     listener.operands.foreach { e =>
       val (token, freq) = e
-      println("%s\t\t%d".format(token,freq))
+      Helper.log("%s\t\t%d".format(token,freq))
     }
     
     // Compute program length
@@ -66,7 +101,7 @@ object Halstead {
     val E = D * V
     
     // Compute lines and characters
-    val lines = Source.fromFile(args(0)).getLines.toList
+    val lines = Source.fromFile(path).getLines.toList
     val numLines = lines.length
     val numChars = lines.foldLeft(0) { (sum,line) => sum + line.length() }
     
@@ -81,7 +116,7 @@ object Halstead {
     println("%-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s".
         format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char","z","logit"))
     println("%-10s %6d %6d %6d %6d %6.1f %6.1f %6.1f %6.1f %6d %6.1f %6.2f %6.4f".
-        format(basename(args(0)),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars,z,logit))
+        format(basename(path),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars,z,logit))
   }
   
   def entropy(map: HashMap[String,Int]): Double = {
@@ -171,33 +206,33 @@ class HalsteadParserListener extends ParseTreeListener {
   def enterEveryRule(arg: ParserRuleContext): Unit = {
     val const = arg.isInstanceOf[CParser.ConstantExpressionContext]
     if(const) {
-      println("constant: "+arg)
+      Helper.log("constant: "+arg)
     }
     
     arg match {
       case node: CParser.UnaryOperatorContext =>
         isUnaryOpContext = true
-        println("GOT UNARY!")
+        Helper.log("GOT UNARY!")
         
       case node: CParser.ExpressionContext =>
         isExprContext = true
-        println("GOT EXPR!")
+        Helper.log("GOT EXPR!")
         
       case node: CParser.InitDeclaratorContext =>
         isDeclarContext = true
-        println("GOT INIT DECLAR!")
+        Helper.log("GOT INIT DECLAR!")
         
 //      case node: CParser.DeclarationContext =>
 //        isDeclarContext = true
-//        println("GOT DECLAR!")
+//        Helper.log("GOT DECLAR!")
         
       case node: CParser.CompoundStatementContext =>
         compoundSttDepth += 1
-        println("GOT COMPOUND!")
+        Helper.log("GOT COMPOUND!")
         
       case node: CParser.PostfixExpressionContext =>
         isPostfixContext = true
-        println("GOT POSTFIX!")
+        Helper.log("GOT POSTFIX!")
         
       case _ =>
     }
@@ -213,7 +248,7 @@ class HalsteadParserListener extends ParseTreeListener {
     // TODO: multiple unary expressions, eg, i++ + -j + *--p
     val token = arg.getText
     
-    println("token = "+token)
+    Helper.log("token = "+token)
     
     val numTokens = tokens.getOrElse(token, 0)
     tokens(token) = numTokens + 1
