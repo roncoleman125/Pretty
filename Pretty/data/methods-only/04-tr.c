@@ -1,0 +1,7 @@
+static void
+es_free (struct E_string *es)
+{
+  free (es->s);
+  free (es->escaped);
+}
+

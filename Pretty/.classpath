@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="fractop-0.3c.jar"/>
 	<classpathentry kind="lib" path="antlr-4.5.1-complete.jar"/>
 	<classpathentry kind="lib" path="boldt-cgrammar.jar"/>
+	<classpathentry kind="lib" path="readability.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,0 +1,37 @@
+static void
+wrap_write (const char *buffer, size_t len,
+            uintmax_t wrap_column, size_t *current_column, FILE *out)
+{
+  size_t written;
+
+  if (wrap_column == 0)
+    {
+      /* Simple write. */
+      if (fwrite (buffer, 1, len, stdout) < len)
+        error (EXIT_FAILURE, errno, _("write error"));
+
+  /* If true, count each hard link of files with multiple links.  */
+    }
+  else
+    for (written = 0; written < len;)
+      {
+        uintmax_t cols_remaining = wrap_column - *current_column;
+        size_t to_write = MIN (cols_remaining, SIZE_MAX);
+        to_write = MIN (to_write, len - written);
+
+        if (to_write == 0)
+          {
+            if (fputs ("\n", out) < 0)
+              error (EXIT_FAILURE, errno, _("write error"));
+            *current_column = 0;
+          }
+        else
+          {
+            if (fwrite (buffer + written, 1, to_write, stdout) < to_write)
+              error (EXIT_FAILURE, errno, _("write error"));
+            *current_column += to_write;
+            written += to_write;
+          }
+      }
+}
+

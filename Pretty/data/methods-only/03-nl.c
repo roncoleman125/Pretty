@@ -1,0 +1,12 @@
+/* Switch to a header section. */
+
+static void
+proc_header (void)
+{
+  current_type = header_type;
+  current_regex = &header_regex;
+  if (reset_numbers)
+    line_no = starting_line_number;
+  putchar ('\n');
+}
+
