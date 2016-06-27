@@ -37,7 +37,8 @@ class Parser(string: String) {
   }
 
   def getLineCount(): Int = {
-    return string.lines.count((s: String) => true)
+    val count = string.lines.count((s: String) => true)
+    count
   }
 
   private def percentOccurrence(c: Char): Double = {
@@ -94,6 +95,10 @@ class Parser(string: String) {
       if ( !Parser.excludedTokens.contains(token) )
         tokenSet += token
     }
+    
+    val N = tokens.size
+    val n = tokenSet.size
+    
     return tokens.size * (math.log(tokenSet.size) / math.log(2))
   }
 

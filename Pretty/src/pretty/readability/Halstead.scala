@@ -61,12 +61,16 @@ object Halstead {
     
     val parser = new CParser(tokens)
 
-    val listener = new HalsteadParserListener
-
+    val listener = new HalsteadParserListener(tokens)
+    
     parser.addParseListener(listener)
 
     // Process only function definitions
-    parser.functionDefinition
+    val tree  = parser.functionDefinition
+    println(tree.toStringTree(parser))
+    
+    val toks = tokens.getTokens
+    println(toks)
    
     Helper.logger("%s\t%s".format("OPERATOR","N"))
     listener.operators.foreach { e =>
@@ -110,7 +114,7 @@ object Halstead {
     val hChars = entropy(listener.chars)
     
     val z = 8.87 - 0.033*V + 0.40*numLines - 1.5*hTokens
-    val logit = 1.0 / (1 + Math.exp(-z))
+    val logit = 1.0 / (1 + Math.pow(Math.E,-z))
     
     println("%-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %7s".
         format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char","z","logit"))
@@ -131,7 +135,7 @@ object Halstead {
   }
 }
 
-class HalsteadParserListener extends ParseTreeListener {
+class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeListener {
   val operators = new HashMap[String,Int]()
   val operands = new HashMap[String,Int]()
   val tokens = new HashMap[String,Int]()
@@ -205,7 +209,7 @@ class HalsteadParserListener extends ParseTreeListener {
         isUnaryOpContext = true
         Helper.logger("GOT UNARY!")
         
-      case node: CParser.ExpressionContext =>
+      case node: CParser.PrimaryExpressionContext =>
         isExprContext = true
         Helper.logger("GOT EXPR!")
         
@@ -224,6 +228,9 @@ class HalsteadParserListener extends ParseTreeListener {
       case node: CParser.PostfixExpressionContext =>
         isPostfixContext = true
         Helper.logger("GOT POSTFIX!")
+        
+      case node: CParser.FunctionSpecifierContext =>
+        Helper.logger("GOT FUNCTION!")
         
       case _ =>
     }
@@ -265,16 +272,37 @@ class HalsteadParserListener extends ParseTreeListener {
         operands(token) = count + 1
       
       case token if isIdentifier(token) && isExprContext =>
-        val count = operands.getOrElse(token,0)
-        operands(token) = count + 1
+        // If next token is a "(", count this as an operator
+        val tokenIndex = arg.getSymbol.getTokenIndex
+        if((tokenIndex+1) < tokenStream.size && tokenStream.get(tokenIndex+1).getText == "(") {  
+          val count = operators.getOrElse(token,0)
+          operators(token) = count + 1
+        }
+        else {
+          val count = operands.getOrElse(token,0)
+          operands(token) = count + 1
+
+        }
         isExprContext = false
-      
-      case token if isFunction(token) && isPostfixContext =>
+        
+      case token if(isIdentifier(token) && isDeclarContext) =>
         val count = operands.getOrElse(token,0)
-        operands(token) = count + 1
-        isPostfixContext = false
+        operands(token) = count+ 1
+        isDeclarContext = false
+        
+      case token if isFunction(token) =>
+        val tokenIndex = arg.getSymbol.getTokenIndex
+        if((tokenIndex+1) < tokenStream.size && tokenStream.get(tokenIndex+1).getText == "(") {  
+          val count = operators.getOrElse(token,0)
+          operators(token) = count + 1
+        }
+
+        
+      case "(" | "{" =>
+          val count = operators.getOrElse(token,0)
+          operators(token) = count + 1
           
-      case ("*" | "-" | "--" | "++" ) if isUnaryOpContext =>
+      case ("*" | "-" | "--" | "++" | "&" | "!" | "~") if isUnaryOpContext =>
           val key = "UNARY" + token
           val states = parent.toStringTree()
           val op = parent.getChild(numChildren-1)
@@ -290,7 +318,7 @@ class HalsteadParserListener extends ParseTreeListener {
           isPostfixContext = true
           
       case "=" | "*" | "+" | "/" | "<" | ">" | "." | "%" | "&" | "|" | "!" | "^" | "~" |
-           "<=" | ">=" | "==" | "-=" | "+=" | "*=" | "/=" | "%=" |
+           "!=" | "<=" | ">=" | "==" | "-=" | "+=" | "*=" | "/=" | "%=" |
            "||" | "&&" | "->" | "<<" | ">>" |
            "[" | 
            "?" =>
@@ -299,7 +327,7 @@ class HalsteadParserListener extends ParseTreeListener {
           val key = "INIT"
           val states = parent.toStringTree()
           val op = parent.getChild(numChildren-1)
-          val operatorCount = operands.getOrElse(key,0)
+          val operatorCount = operators.getOrElse(key,0)
           operators(key) = operatorCount + 1 
           isDeclarContext = false
         }
@@ -310,6 +338,11 @@ class HalsteadParserListener extends ParseTreeListener {
         }
         
       case _ =>
+        // Key words put into operators
+        if(keyWords.contains(token)) {
+          val operatorCount = operators.getOrElse(token,0)
+          operators(token) = operatorCount + 1 
+        }
     }
   }
   
