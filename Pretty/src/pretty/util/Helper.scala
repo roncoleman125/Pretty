@@ -15,4 +15,8 @@ object Helper {
     else
       s.substring(j+1)
   }
+  
+  def decomment(s: String): String = {
+    null
+  }
 }

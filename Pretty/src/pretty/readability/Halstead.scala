@@ -39,6 +39,7 @@ import org.antlr.v4.runtime.ParserRuleContext
 import scala.collection.mutable.HashMap
 import scala.io.Source
 import pretty.util.Helper
+import org.antlr.v4.runtime.Token
 
 object Halstead {
   val LOG2 = Math.log(2)
@@ -67,10 +68,7 @@ object Halstead {
 
     // Process only function definitions
     val tree  = parser.functionDefinition
-    println(tree.toStringTree(parser))
-    
-    val toks = tokens.getTokens
-    println(toks)
+    Helper.logger(tree.toStringTree(parser))
    
     Helper.logger("%s\t%s".format("OPERATOR","N"))
     listener.operators.foreach { e =>
@@ -106,6 +104,7 @@ object Halstead {
     // Compute lines and characters
     val lines = Source.fromFile(path).getLines.toList
     val numLines = lines.length
+    val numBlankLines = lines.filter { line => line.trim.length == 0 }.size
     val numChars = lines.foldLeft(0) { (sum,line) => sum + line.length() }
     
     val numUniqueTokens = listener.tokens.keySet.size
@@ -120,6 +119,31 @@ object Halstead {
         format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char","z","logit"))
     println("%-10s %6d %6d %6d %6d %6.2f %6.2f %6.2f %6.2f %6d %6.2f %6.2f %7.5f".
         format(Helper.basename(path),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars,z,logit))
+       
+    // Count number of commented lines assuming C.g4 puts comments in HIDDEN channel
+    val s = Source.fromFile(path).mkString
+    
+    val numCommentLines = (0 until tokens.size).foldLeft(0) { (sum, index) =>
+      // Look for tokens in the HIDDEN channel
+      val token = tokens.get(index)
+      
+      if(token.getChannel != Token.DEFAULT_CHANNEL) {
+        // If HIDDEN channel contains a newline, this is one addition line
+        (token.getStartIndex to token.getStopIndex).foldLeft(1) { (commentSum, k) =>
+          if(s(k) == '\n')
+            commentSum + 1
+          else
+            commentSum
+        } + sum
+      }
+      else
+        sum
+    }
+    Helper.logger("commented lines = "+numCommentLines)
+    
+    val lexemes = listener.operands ++ listener.operators
+    println(lexemes)
+
   }
   
   def entropy(map: HashMap[String,Int]): Double = {
@@ -217,10 +241,6 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         isDeclarContext = true
         Helper.logger("GOT INIT DECLAR!")
         
-//      case node: CParser.DeclarationContext =>
-//        isDeclarContext = true
-//        Helper.log("GOT DECLAR!")
-        
       case node: CParser.CompoundStatementContext =>
         compoundSttDepth += 1
         Helper.logger("GOT COMPOUND!")
@@ -291,6 +311,7 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         isDeclarContext = false
         
       case token if isFunction(token) =>
+        // If next token is "(", count this as a function operator
         val tokenIndex = arg.getSymbol.getTokenIndex
         if((tokenIndex+1) < tokenStream.size && tokenStream.get(tokenIndex+1).getText == "(") {  
           val count = operators.getOrElse(token,0)
@@ -299,8 +320,10 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
 
         
       case "(" | "{" =>
-          val count = operators.getOrElse(token,0)
-          operators(token) = count + 1
+          val left = if(token == "(") ")" else "}"
+          val key = token + left
+          val count = operators.getOrElse(key,0)
+          operators(key) = count + 1
           
       case ("*" | "-" | "--" | "++" | "&" | "!" | "~") if isUnaryOpContext =>
           val key = "UNARY" + token
