@@ -1,0 +1,9 @@
+public class HelloWorld { // words = 3, sentence = 1 "{", 6+5+10
+	public void foo() { // words = 3, sentence = 1 "{", 6+4+3
+		e = a * b + c + df; // words = 9, sentence = 1 ";", 1+1+1+1+1+1+1+1+2
+	}
+}
+
+// words = 15
+// length = 21+13+10 = 44
+// sentence = 3

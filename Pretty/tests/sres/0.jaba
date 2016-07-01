@@ -1,0 +1,8 @@
+public class HelloWorld {
+	public static void main(String[] args) {
+	}
+}
+
+// words = 10
+// length = 53
+// sentences = 2

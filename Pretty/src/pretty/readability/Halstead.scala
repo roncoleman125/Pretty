@@ -119,11 +119,22 @@ object Halstead {
         format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char","z","logit"))
     println("%-10s %6d %6d %6d %6d %6.2f %6.2f %6.2f %6.2f %6d %6.2f %6.2f %7.5f".
         format(Helper.basename(path),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars,z,logit))
-       
-    // Count number of commented lines assuming C.g4 puts comments in HIDDEN channel
+
+    val ncl = numCommentLines(path,tokens)
+    
+    Helper.logger("commented lines = "+ncl)
+    
+    val lexemes = listener.operands ++ listener.operators
+    Helper.logger("OPS: "+listener.operands)
+    Helper.logger("OPS: "+listener.operators)
+    Helper.logger("%d %d %d".format(listener.numWords,listener.wordsLen,listener.numSentences))
+  }
+  
+  /** Count number of commented lines assuming C.g4 puts block & single-line comments in HIDDEN channel */
+  def numCommentLines(path: String, tokens:CommonTokenStream): Int = {
     val s = Source.fromFile(path).mkString
     
-    val numCommentLines = (0 until tokens.size).foldLeft(0) { (sum, index) =>
+    val ncl = (0 until tokens.size).foldLeft(0) { (sum, index) =>
       // Look for tokens in the HIDDEN channel
       val token = tokens.get(index)
       
@@ -138,12 +149,9 @@ object Halstead {
       }
       else
         sum
-    }
-    Helper.logger("commented lines = "+numCommentLines)
+    } 
     
-    val lexemes = listener.operands ++ listener.operators
-    println(lexemes)
-
+    ncl
   }
   
   def entropy(map: HashMap[String,Int]): Double = {
@@ -164,6 +172,7 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   val operands = new HashMap[String,Int]()
   val tokens = new HashMap[String,Int]()
   val chars = new HashMap[String,Int]()
+  val decisions = new HashMap[String,Int]()
   var isUnaryOpContext = false
   var isDeclarContext = false
   var isExprContext = false
@@ -222,12 +231,7 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   val keyWords = HashMap[String,String]()
   kws.foreach { kw => keyWords(kw) = kw}
   
-  def enterEveryRule(arg: ParserRuleContext): Unit = {
-    val const = arg.isInstanceOf[CParser.ConstantExpressionContext]
-    if(const) {
-      Helper.logger("constant: "+arg)
-    }
-    
+  def enterEveryRule(arg: ParserRuleContext): Unit = {   
     arg match {
       case node: CParser.UnaryOperatorContext =>
         isUnaryOpContext = true
@@ -252,21 +256,48 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
       case node: CParser.FunctionSpecifierContext =>
         Helper.logger("GOT FUNCTION!")
         
+      case node: CParser.IterationStatementContext =>
+        isIterationContext = true
+        
       case _ =>
     }
   }
   
-  def exitEveryRule(arg: ParserRuleContext): Unit = {}
+  def exitEveryRule(arg: ParserRuleContext): Unit = {
+    arg match {
+      case node: CParser.IterationStatementContext =>
+        isIterationContext = true
+      case _ =>
+    }
+  }
   
   def visitErrorNode(arg: ErrorNode): Unit = {}
   
-  def visitTerminal(arg: TerminalNode): Unit = {  
+  def visitTerminal(arg: TerminalNode): Unit = {
+    halsteadProcessing(arg)
+    
+    sresProcessing(arg)
+    
+    ccProcessing(arg)
+  }
+  
+  def ccProcessing(arg: TerminalNode): Unit = {
+    val token = arg.getText
+    token match {
+      case "if" | "else" | "for" | "while" | "case" | "||" | "&&" =>
+        val count = decisions.getOrElse(token, 0)
+        decisions(token) = count + 1
+      case _ =>
+    }    
+  }
+  
+  def halsteadProcessing(arg: TerminalNode): Unit = {  
     // TODO: arrays
     // TODO: nested expressions
     // TODO: multiple unary expressions, eg, i++ + -j + *--p
     val token = arg.getText
     
-    Helper.logger("token = "+token)
+//    Helper.logger("token = "+token)
     
     val numTokens = tokens.getOrElse(token, 0)
     tokens(token) = numTokens + 1
@@ -278,14 +309,12 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
       chars(s) = numChars + 1
     }
     
-    // Process only with context of a function or procedure
-//    if(compoundSttDepth == 0)
-//      return
-    
     val parent = arg.getParent
     val numChildren = parent.getChildCount
     val parentText = parent.getText
 
+    // Do the Halstead calculation
+    // See exmple in https://en.wikipedia.org/wiki/Halstead_complexity_measures
     token match {
       case token if isNumber(token) || isString(token) =>
         val count = operands.getOrElse(token,0)
@@ -313,15 +342,15 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
       case token if isFunction(token) =>
         // If next token is "(", count this as a function operator
         val tokenIndex = arg.getSymbol.getTokenIndex
+        
         if((tokenIndex+1) < tokenStream.size && tokenStream.get(tokenIndex+1).getText == "(") {  
           val count = operators.getOrElse(token,0)
           operators(token) = count + 1
         }
 
-        
       case "(" | "{" =>
-          val left = if(token == "(") ")" else "}"
-          val key = token + left
+          val rhs = if(token == "(") ")" else "}"
+          val key = token + rhs
           val count = operators.getOrElse(key,0)
           operators(key) = count + 1
           
@@ -339,7 +368,7 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
           val count = operators.getOrElse(key,0)
           operators(key) = count + 1 
           isPostfixContext = true
-          
+        
       case "=" | "*" | "+" | "/" | "<" | ">" | "." | "%" | "&" | "|" | "!" | "^" | "~" |
            "!=" | "<=" | ">=" | "==" | "-=" | "+=" | "*=" | "/=" | "%=" |
            "||" | "&&" | "->" | "<<" | ">>" |
@@ -361,11 +390,78 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         }
         
       case _ =>
-        // Key words put into operators
+        // Put in key words as operators
         if(keyWords.contains(token)) {
           val operatorCount = operators.getOrElse(token,0)
+          
           operators(token) = operatorCount + 1 
         }
+    }
+
+  }
+ 
+  var numSentences = 0
+  var numWords = 0
+  var wordsLen = 0
+  var dotPhase = false
+  var isIterationContext = false
+  
+  def sresProcessing(arg: TerminalNode): Unit = {
+    // TODO: test for statements
+    val token = arg.getText
+    Helper.logger("token: "+token)
+    
+    val len = token.length
+        
+    // Do the SRES calculations
+    
+    // NOTE: Abbas (2009), p26, #7, nesting level appears not to be implemented
+    // in Pojge.jar.
+    
+    token match {
+      case "*" if isUnaryOpContext =>
+      //TODO: seems like more processing needed here since it is like DOT
+        
+      // Single-sentence generating statement
+      case "{" | ";" | "for" =>
+        if(!isIterationContext)
+          numSentences += 1
+        
+        if(token == "for") {
+          numWords += 1
+          wordsLen += len
+        }
+        
+        dotPhase = false
+      
+      case tok: String if isIdentifier(tok) || isString(tok) || isNumber(tok) || keyWords.contains(tok) =>
+        val trueCount = if(!dotPhase) 1 else 2
+        numWords += trueCount
+      
+        val trueLen = if(!dotPhase) len else len * 2
+        wordsLen += trueLen
+      
+        dotPhase = false
+        
+      case "." | "->" =>
+        val trueCount = len * 2
+        numWords += trueCount
+        
+        val trueLen = len * 2
+        wordsLen += trueLen
+        
+        dotPhase = true
+        
+      case "*" | "-" | "--" | "++" | "&" | "!" | "~" |
+           "++" | "--" |
+           "=" | "*" | "+" | "/" | "<" | ">" | "." | "%" | "&" | "|" | "!" | "^" | "~" |
+           "!=" | "<=" | ">=" | "==" | "-=" | "+=" | "*=" | "/=" | "%=" |
+           "||" | "&&" | "->" | "<<" | ">>" |
+           "[" | 
+           "?" =>
+             numWords += 1
+             wordsLen += len
+      case _ =>
     }
   }
   
