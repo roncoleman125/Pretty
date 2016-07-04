@@ -101,33 +101,55 @@ object Halstead {
     // Compute effort
     val E = D * V
     
-    // Compute lines and characters
+    // Compute LOC
     val lines = Source.fromFile(path).getLines.toList
-    val numLines = lines.length
-    val numBlankLines = lines.filter { line => line.trim.length == 0 }.size
+    val loc = lines.length
+    
+    // Number blank lines
+    val nbl = lines.filter { line => line.trim.length == 0 }.size
+    
     val numChars = lines.foldLeft(0) { (sum,line) => sum + line.length() }
     
     val numUniqueTokens = listener.tokens.keySet.size
 
-    val hTokens = entropy(listener.tokens)
-    val hChars = entropy(listener.chars)
+    val entropyTokens = entropy(listener.tokens)
+    val entropyChars = entropy(listener.chars)
     
-    val z = 8.87 - 0.033*V + 0.40*numLines - 1.5*hTokens
+    val z = 8.87 - 0.033*V + 0.40*loc - 1.5*entropyTokens
     val logit = 1.0 / (1 + Math.pow(Math.E,-z))
     
-    println("%-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %7s".
+    println("! %-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %7s".
         format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char","z","logit"))
-    println("%-10s %6d %6d %6d %6d %6.2f %6.2f %6.2f %6.2f %6d %6.2f %6.2f %7.5f".
-        format(Helper.basename(path),numLines,numChars,N,n,V,D,E,hTokens,numUniqueTokens,hChars,z,logit))
+    println("! %-10s %6d %6d %6d %6d %6.2f %6.2f %6.2f %6.2f %6d %6.2f %6.2f %7.5f".
+        format(Helper.basename(path),loc,numChars,N,n,V,D,E,entropyTokens,numUniqueTokens,entropyChars,z,logit))
 
     val ncl = numCommentLines(path,tokens)
     
-    Helper.logger("commented lines = "+ncl)
-    
-    val lexemes = listener.operands ++ listener.operators
     Helper.logger("OPS: "+listener.operands)
     Helper.logger("OPS: "+listener.operators)
-    Helper.logger("%d %d %d".format(listener.numWords,listener.wordsLen,listener.numSentences))
+    Helper.logger("sentences: "+listener.sentences)
+    val asl = listener.sentences.values.sum / listener.sentences.size.toDouble
+    
+    val awl = listener.lenow / listener.now.toDouble
+    
+    val sres = asl - 0.1 * awl
+    
+    val cc = if(listener.decisions.size != 0) listener.decisions.values.sum + 1 else 1
+    
+    val ccnos = cc / Math.max(listener.nostt,1).toDouble
+    
+    val cd = ncl / Math.max(listener.nostt,1).toDouble
+    
+    val cm = ncl / loc
+    
+    val mi = 171 - 5.2 * Math.log(V) - 0.23 * cc * Math.log(loc)
+    
+    val misei = 171 - 5.2 * log2(V) - 0.23 * cc - 16.2 * log2(loc) + 50 * Math.sin(Math.sqrt(2.4*loc))
+    
+    val mims = Math.max(0, (171 - 5.2 * Math.log(V) - 0.23 * cc - 16.2 * Math.log(loc)) * 100 / 171)
+    
+    println("@ %6s %6s %6s %6s %6s %6s %6s %6s %6s".format("sres","ncl","nbl","cc","mi","misei","mims","cc/nos","cd" ))
+    println("@ %6.2f %6d %6d %6d %6.3f %6.3f %6.3f %6.3f %6.3f %d %d".format(sres, ncl, nbl, cc, mi, misei, mims, ccnos, cd))
   }
   
   /** Count number of commented lines assuming C.g4 puts block & single-line comments in HIDDEN channel */
@@ -154,13 +176,15 @@ object Halstead {
     ncl
   }
   
+  def log2(value: Double): Double = Math.log(value) / LOG2
+  
   def entropy(map: HashMap[String,Int]): Double = {
     val total = map.values.sum
     val h = map.foldLeft(0.0) { (sum,itemCount) =>
       val (item,count) = itemCount
       
       val p = count / total.toDouble
-      sum - p * Math.log(p) / LOG2
+      sum - p * log2(p)
     }   
     
     h
@@ -266,7 +290,8 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   def exitEveryRule(arg: ParserRuleContext): Unit = {
     arg match {
       case node: CParser.IterationStatementContext =>
-        isIterationContext = true
+        isIterationContext = false
+        
       case _ =>
     }
   }
@@ -400,12 +425,25 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
 
   }
  
-  var numSentences = 0
-  var numWords = 0
-  var wordsLen = 0
+  /** number C statements */
+  var nostt = 0
+  
+  /** number sentences */
+  var nosent = 0
+  
+  /** number words */
+  var now = 0
+  
+  /** length of words */
+  var lenow = 0
+  
   var dotPhase = false
   var isIterationContext = false
-  
+  var inFor = false
+  var semiCount = 0
+  var lastStopIndex = 0
+  val sentences = HashMap[Int,Int]()
+
   def sresProcessing(arg: TerminalNode): Unit = {
     // TODO: test for statements
     val token = arg.getText
@@ -413,56 +451,91 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
     
     val len = token.length
         
-    // Do the SRES calculations
-    
-    // NOTE: Abbas (2009), p26, #7, nesting level appears not to be implemented
+    // Collection SRES statistics
+    // NOTE: Abbas (2009), p26, item 7, nesting level appears not to be implemented
     // in Pojge.jar.
     
     token match {
       case "*" if isUnaryOpContext =>
-      //TODO: seems like more processing needed here since it is like DOT
+        // TODO: seems like more processing needed here since it is like DOT
+        now += 1
         
-      // Single-sentence generating statement
-      case "{" | ";" | "for" =>
-        if(!isIterationContext)
-          numSentences += 1
+        lenow += len
         
-        if(token == "for") {
-          numWords += 1
-          wordsLen += len
+        dotPhase = false
+        
+      case "for" =>
+        now += 1
+        
+        lenow += len
+        
+        inFor = true
+        
+        dotPhase = false
+        
+      case ";" =>
+        if(inFor) {
+          semiCount += 1
+          
+          if(semiCount == 2) {
+            inFor = false
+            semiCount = 0
+          }
         }
+        else
+          updateSentences(arg.getSymbol)
         
+        nostt += 1
+        
+        dotPhase = false
+          
+      case "{" =>       
+        updateSentences(arg.getSymbol)
+
         dotPhase = false
       
       case tok: String if isIdentifier(tok) || isString(tok) || isNumber(tok) || keyWords.contains(tok) =>
         val trueCount = if(!dotPhase) 1 else 2
-        numWords += trueCount
+        now += trueCount
       
         val trueLen = if(!dotPhase) len else len * 2
-        wordsLen += trueLen
+        lenow += trueLen
       
         dotPhase = false
         
       case "." | "->" =>
-        val trueCount = len * 2
-        numWords += trueCount
+        now += 2
         
         val trueLen = len * 2
-        wordsLen += trueLen
+        lenow += trueLen
         
         dotPhase = true
         
-      case "*" | "-" | "--" | "++" | "&" | "!" | "~" |
+      case "-" | "--" | "++" | "&" | "!" | "~" |
            "++" | "--" |
-           "=" | "*" | "+" | "/" | "<" | ">" | "." | "%" | "&" | "|" | "!" | "^" | "~" |
+           "=" | "+" | "/" | "<" | ">" | "." | "%" | "&" | "|" | "!" | "^" | "~" |
            "!=" | "<=" | ">=" | "==" | "-=" | "+=" | "*=" | "/=" | "%=" |
            "||" | "&&" | "->" | "<<" | ">>" |
            "[" | 
            "?" =>
-             numWords += 1
-             wordsLen += len
+             now += 1
+             
+             lenow += len
+             
+             dotPhase = false
       case _ =>
     }
+  }
+
+  def updateSentences(token: Token): Unit = {
+    
+    val stopIndex = token.getStopIndex
+    
+    sentences(nosent) = stopIndex - lastStopIndex + 1
+
+    lastStopIndex = stopIndex
+
+    nosent += 1
   }
   
   def isNumber(s: String) = s(0).isDigit
@@ -483,14 +556,4 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   def isFunction(s: String): Boolean = {
     isIdentifier(s)
   }
-}
-
-class DudParserListener extends ParseTreeListener {
-  def enterEveryRule(arg: ParserRuleContext): Unit = {
-  }
-  def exitEveryRule(arg: ParserRuleContext): Unit = {}
-  
-  def visitErrorNode(arg: ErrorNode): Unit = {}
-  
-  def visitTerminal(arg: TerminalNode): Unit = {}
 }

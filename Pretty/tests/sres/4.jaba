@@ -1,0 +1,10 @@
+public class HelloWorld { // words = 3, sentence = 1 "{", 6+5+10
+	public void foo() { // words = 3, sentence = 1 "{", 6+4+3
+		for(int i=0; i < 10; i++)  // words = 10, sentence = 1 "for, 3+3+1+1+1+1+1+2+1+2=16
+		  System.out.println("i = " + i);  // words = 12, sentence = 1, 6+2+6+2+14+6+1+1
+	}
+}
+
+// words = 28
+// length = 21+13+10 = 88
+// sentence = 3
