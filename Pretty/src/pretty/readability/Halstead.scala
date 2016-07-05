@@ -40,7 +40,11 @@ import scala.collection.mutable.HashMap
 import scala.io.Source
 import pretty.util.Helper
 import org.antlr.v4.runtime.Token
+import scala.collection.mutable.ListBuffer
 
+ 
+case class Sentence(start: Token, end: Token)
+  
 object Halstead {
   val LOG2 = Math.log(2)
   
@@ -128,7 +132,8 @@ object Halstead {
     Helper.logger("OPS: "+listener.operands)
     Helper.logger("OPS: "+listener.operators)
     Helper.logger("sentences: "+listener.sentences)
-    val asl = listener.sentences.values.sum / listener.sentences.size.toDouble
+    
+    val asl = analyzeAsl(tokens,listener.sentences)
     
     val awl = listener.lenow / listener.now.toDouble
     
@@ -136,9 +141,9 @@ object Halstead {
     
     val cc = if(listener.decisions.size != 0) listener.decisions.values.sum + 1 else 1
     
-    val ccnos = cc / Math.max(listener.nostt,1).toDouble
+    val ccnos = cc / Math.max(listener.numStatements,1).toDouble
     
-    val cd = ncl / Math.max(listener.nostt,1).toDouble
+    val cd = ncl / Math.max(listener.numStatements,1).toDouble
     
     val cm = ncl / loc
     
@@ -148,11 +153,54 @@ object Halstead {
     
     val mims = Math.max(0, (171 - 5.2 * Math.log(V) - 0.23 * cc - 16.2 * Math.log(loc)) * 100 / 171)
     
-    println("@ %6s %6s %6s %6s %6s %6s %6s %6s %6s".format("sres","ncl","nbl","cc","mi","misei","mims","cc/nos","cd" ))
-    println("@ %6.2f %6d %6d %6d %6.3f %6.3f %6.3f %6.3f %6.3f %d %d".format(sres, ncl, nbl, cc, mi, misei, mims, ccnos, cd))
+    println("@ %6s %6s %6s %6s %7s %7s %7s %6s %6s".format("sres","ncl","nbl","cc","mi","misei","mims","cc/nos","cd" ))
+    println("@ %6.2f %6d %6d %6d %7.2f %7.2f %7.2f %6.3f %6.3f".format(sres, ncl, nbl, cc, mi, misei, mims, ccnos, cd))
+  }
+
+  /**
+   * Get the ASL.
+   * NOTE: there's some ambiguity of the relationship between ASL and AWL, in other words, is
+   * ASL just the simple length of a sentence (what we calculate) or is it the sum of the adjusted
+   * word lengths in a sentence.
+   */
+  def analyzeAsl(tokens: CommonTokenStream, sentences: HashMap[Int,Sentence]): Double = {       
+    // Ignore whitespace: Abbas(2010), p25, paragraph 1, next to last sentence
+    val total = sentences.foldLeft(0) { (sum, pair) =>
+      val (num, sentence) = pair
+      val startText = sentence.start.getText
+      val stopText = sentence.end.getText
+      val start = sentence.start.getTokenIndex
+      val stop = sentence.end.getTokenIndex
+      
+      val sentenceLen = (start to stop).foldLeft(0) { (sum_, index) =>          
+        val token = tokens.get(index)
+        
+        val tokenText = token.getText
+        
+        if(token.getChannel == Token.DEFAULT_CHANNEL) {
+          val patchLen = token.getStopIndex - token.getStartIndex + 1
+          
+          sum_ + patchLen
+        }
+        
+        else
+          sum_
+      }
+      
+      // Handle special case (though typical) where ";" also ends a compound stt
+      // which will be off by one because the mark point is the "{"
+      if(startText == "{" && stopText == ";")
+        sum + sentenceLen - 1
+      else
+        sum + sentenceLen
+    }
+    
+    val asl = total / sentences.size.toDouble
+    
+    asl
   }
   
-  /** Count number of commented lines assuming C.g4 puts block & single-line comments in HIDDEN channel */
+  /** Count number of commented lines ASSUMING!!! C.g4 puts block & single-line comments in HIDDEN channel */
   def numCommentLines(path: String, tokens:CommonTokenStream): Int = {
     val s = Source.fromFile(path).mkString
     
@@ -161,7 +209,7 @@ object Halstead {
       val token = tokens.get(index)
       
       if(token.getChannel != Token.DEFAULT_CHANNEL) {
-        // If HIDDEN channel contains a newline, this is one addition line
+        // If HIDDEN channel contains a newline, there is one additional line
         (token.getStartIndex to token.getStopIndex).foldLeft(1) { (commentSum, k) =>
           if(s(k) == '\n')
             commentSum + 1
@@ -424,12 +472,12 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
     }
 
   }
- 
+  
   /** number C statements */
-  var nostt = 0
+  var numStatements = 0
   
   /** number sentences */
-  var nosent = 0
+  var numSentences = 0
   
   /** number words */
   var now = 0
@@ -439,10 +487,14 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   
   var dotPhase = false
   var isIterationContext = false
-  var inFor = false
+  var isForContext = false
   var semiCount = 0
   var lastStopIndex = 0
-  val sentences = HashMap[Int,Int]()
+  val sentences = HashMap[Int, Sentence]()
+  val stack = ListBuffer[Token]()
+  var mark: Option[Token] = None
+  
+
 
   def sresProcessing(arg: TerminalNode): Unit = {
     // TODO: test for statements
@@ -469,31 +521,28 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         
         lenow += len
         
-        inFor = true
+        isForContext = true
         
         dotPhase = false
-        
+
       case ";" =>
-        if(inFor) {
-          semiCount += 1
-          
-          if(semiCount == 2) {
-            inFor = false
-            semiCount = 0
-          }
-        }
-        else
-          updateSentences(arg.getSymbol)
-        
-        nostt += 1
+        handleSemicolons(arg.getSymbol)
         
         dotPhase = false
           
-      case "{" =>       
-        updateSentences(arg.getSymbol)
+      case "{" =>               
+        push(arg.getSymbol)
 
         dotPhase = false
       
+      case "}" =>
+        sentences(numSentences) = Sentence(pop(),arg.getSymbol)
+        
+        // Go back this far with a ";" should it appear
+        mark = Some(arg.getSymbol)
+        
+        numSentences += 1
+        
       case tok: String if isIdentifier(tok) || isString(tok) || isNumber(tok) || keyWords.contains(tok) =>
         val trueCount = if(!dotPhase) 1 else 2
         now += trueCount
@@ -527,16 +576,41 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
     }
   }
 
-  def updateSentences(token: Token): Unit = {
+  def handleSemicolons(curToken: Token): Unit = {
+    numStatements += 1
     
-    val stopIndex = token.getStopIndex
+    // If we're in FOR loop, don't count semicolons as separate sentence, see Abbas (2010), p25, #4
+    if (isForContext) {
+      semiCount += 1
+
+      if (semiCount == 2) {
+        isForContext = false
+        
+        semiCount = 0
+      }
+      
+      return
+    }
+
+    // Go back to last mark to measure sentence length
+    mark match {
+      case Some(lastToken) =>
+        sentences(numSentences) = Sentence(lastToken, curToken)
+        
+      case None =>
+        if (stack.size == 0)
+          sentences(numSentences) = Sentence(curToken, curToken)
+        else
+          sentences(numSentences) = Sentence(stack.last, curToken)
+    }
     
-    sentences(nosent) = stopIndex - lastStopIndex + 1
+    mark = Some(curToken)
 
-    lastStopIndex = stopIndex
-
-    nosent += 1
+    numSentences += 1
   }
+  
+  def push(token: Token): Unit = stack.append(token)
+  def pop(): Token = stack.remove(stack.size - 1)
   
   def isNumber(s: String) = s(0).isDigit
   
@@ -553,7 +627,5 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
 //      }
   }
   
-  def isFunction(s: String): Boolean = {
-    isIdentifier(s)
-  }
+  def isFunction(s: String): Boolean = isIdentifier(s)
 }
