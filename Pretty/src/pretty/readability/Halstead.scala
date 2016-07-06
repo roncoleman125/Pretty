@@ -43,7 +43,7 @@ import org.antlr.v4.runtime.Token
 import scala.collection.mutable.ListBuffer
 
  
-case class Sentence(start: Token, end: Token)
+case class Sentence(start: Token, stop: Token)
   
 object Halstead {
   val LOG2 = Math.log(2)
@@ -168,9 +168,9 @@ object Halstead {
     val total = sentences.foldLeft(0) { (sum, pair) =>
       val (num, sentence) = pair
       val startText = sentence.start.getText
-      val stopText = sentence.end.getText
+      val stopText = sentence.stop.getText
       val start = sentence.start.getTokenIndex
-      val stop = sentence.end.getTokenIndex
+      val stop = sentence.stop.getTokenIndex
       
       val sentenceLen = (start to stop).foldLeft(0) { (sum_, index) =>          
         val token = tokens.get(index)
@@ -494,8 +494,6 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   val stack = ListBuffer[Token]()
   var mark: Option[Token] = None
   
-
-
   def sresProcessing(arg: TerminalNode): Unit = {
     // TODO: test for statements
     val token = arg.getText
@@ -530,13 +528,23 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         
         dotPhase = false
           
-      case "{" =>               
+      case "{" =>
+        val startIndex = arg.getSymbol.getStartIndex
+        val stopIndex = arg.getSymbol.getStopIndex
+        
         push(arg.getSymbol)
 
         dotPhase = false
       
       case "}" =>
-        sentences(numSentences) = Sentence(pop(),arg.getSymbol)
+        val startIndex = arg.getSymbol.getStartIndex
+        val stopIndex = arg.getSymbol.getStopIndex 
+        
+        val lastToken = pop
+        val lastStartIndex = lastToken.getStartIndex
+        val lastStopIndex = lastToken.getStopIndex
+        
+        sentences(numSentences) = Sentence(lastToken,arg.getSymbol)
         
         // Go back this far with a ";" should it appear
         mark = Some(arg.getSymbol)
@@ -598,10 +606,11 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         sentences(numSentences) = Sentence(lastToken, curToken)
         
       case None =>
-        if (stack.size == 0)
-          sentences(numSentences) = Sentence(curToken, curToken)
-        else
+        if (stack.size != 0)
           sentences(numSentences) = Sentence(stack.last, curToken)
+        else
+          // Case of code outside function block
+          sentences(numSentences) = Sentence(curToken, curToken)
     }
     
     mark = Some(curToken)
