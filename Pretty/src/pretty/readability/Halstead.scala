@@ -49,11 +49,19 @@ object Halstead {
   val LOG2 = Math.log(2)
   
   def main(args: Array[String]): Unit = {
+    
+    print("%-10s %6s %6s %6s %6s %6s %6s %7s %6s %6s %6s %6s %7s ".
+        format("file","loc","chars","N","n","V","D","E","H:tok","Tokens","H:char","z","phd"))
+        
+    println("%6s %6s %6s %6s %7s %7s %7s %6s %6s %s".
+        format("sres","ncl","nbl","cc","mi","misei","mims","cc/nos","cd", "buse" ))
+        
     args.foreach {
       path => process(path)
     }
   }
   
+  /** Process one file */
   def process(path: String): Unit = {
     val in = new FileInputStream(path)
     
@@ -121,12 +129,6 @@ object Halstead {
     
     val z = 8.87 - 0.033*V + 0.40*loc - 1.5*entropyTokens
     val logit = 1.0 / (1 + Math.pow(Math.E,-z))
-    
-    print("%-10s %6s %6s %6s %6s %6s %6s %7s %6s %6s %6s %6s %7s ".
-        format("file","loc","chars","N","n","V","D","E","H:tok","Tokens","H:char","z","phd"))
-        
-    println("%6s %6s %6s %6s %7s %7s %7s %6s %6s %s".
-        format("sres","ncl","nbl","cc","mi","misei","mims","cc/nos","cd", "buse" ))
 
     val ncl = numCommentLines(path,tokens)
     

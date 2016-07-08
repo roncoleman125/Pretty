@@ -8,8 +8,6 @@ OUTPUT_FILE=~/tmp/hal-results-${DAY}.txt
 
 rm $OUTPUT_FILE
 
-
-
 # Assumes we're in util folder
 cd ../bin
 INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
@@ -20,6 +18,6 @@ do
   LC=`wc -l $FILE|awk '{print$1}'`
   RESULTS="$NAME $LC "
   HAL=`scala -cp $CLASSPATH pretty.readability.Halstead $FILE |
-    	awk '!/File/{print $0}'`
+    	awk '!/file/{print $0}'`
   echo $HAL | tee -a $OUTPUT_FILE
 done
