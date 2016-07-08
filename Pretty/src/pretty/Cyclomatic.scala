@@ -56,7 +56,7 @@ class MyParserListener extends ParseTreeListener {
   def visitTerminal(arg: TerminalNode): Unit = {
     val token = arg.getText
     token match {
-      case "if" | "else" | "for" | "while" | "case" | "||" | "&&" =>
+      case "if" | "else" | "for" | "while" | "case" | "||" | "&&" | "?" =>
         val count = decisions.getOrElse(token, 0)
         decisions(token) = count + 1
       case _ =>

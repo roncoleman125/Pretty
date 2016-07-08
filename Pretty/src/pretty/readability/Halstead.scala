@@ -122,20 +122,21 @@ object Halstead {
     val z = 8.87 - 0.033*V + 0.40*loc - 1.5*entropyTokens
     val logit = 1.0 / (1 + Math.pow(Math.E,-z))
     
-    println("! %-10s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %7s".
-        format("File","Lines","Chars","N","n","V","D","E","H:tok","Tokens","H:char","z","logit"))
-    println("! %-10s %6d %6d %6d %6d %6.2f %6.2f %6.2f %6.2f %6d %6.2f %6.2f %7.5f".
-        format(Helper.basename(path),loc,numChars,N,n,V,D,E,entropyTokens,numUniqueTokens,entropyChars,z,logit))
+    print("%-10s %6s %6s %6s %6s %6s %6s %7s %6s %6s %6s %6s %7s ".
+        format("file","loc","chars","N","n","V","D","E","H:tok","Tokens","H:char","z","phd"))
+        
+    println("%6s %6s %6s %6s %7s %7s %7s %6s %6s %s".
+        format("sres","ncl","nbl","cc","mi","misei","mims","cc/nos","cd", "buse" ))
 
     val ncl = numCommentLines(path,tokens)
     
-    Helper.logger("OPS: "+listener.operands)
-    Helper.logger("OPS: "+listener.operators)
-    Helper.logger("sentences: "+listener.sentences)
+//    Helper.logger("OPD: "+listener.operands)
+//    Helper.logger("OPS: "+listener.operators)
+//    Helper.logger("sentences: "+listener.sentences)
     
     val asl = analyzeAsl(tokens,listener.sentences)
     
-    val awl = listener.lenow / listener.now.toDouble
+    val awl = listener.lenWords / listener.numWords.toDouble
     
     val sres = asl - 0.1 * awl
     
@@ -151,15 +152,20 @@ object Halstead {
     
     val misei = 171 - 5.2 * log2(V) - 0.23 * cc - 16.2 * log2(loc) + 50 * Math.sin(Math.sqrt(2.4*loc))
     
-    val mims = Math.max(0, (171 - 5.2 * Math.log(V) - 0.23 * cc - 16.2 * Math.log(loc)) * 100 / 171)
+    val mims = Math.max(0, (171 - 5.2 * Math.log(V) - 0.23 * cc - 16.2 * Math.log(loc)) * 100.0 / 171.0)
     
-    println("@ %6s %6s %6s %6s %7s %7s %7s %6s %6s".format("sres","ncl","nbl","cc","mi","misei","mims","cc/nos","cd" ))
-    println("@ %6.2f %6d %6d %6d %7.2f %7.2f %7.2f %6.3f %6.3f".format(sres, ncl, nbl, cc, mi, misei, mims, ccnos, cd))
+    val readability = raykernel.apps.readability.eval.Main.getReadability(Source.fromFile(path).mkString)
+    
+    print("%-10s %6d %6d %6d %6d %6.2f %6.2f %7.1f %6.2f %6d %6.2f %6.2f %7.5f ".
+        format(Helper.basename(path),loc,numChars,N,n,V,D,E,entropyTokens,numUniqueTokens,entropyChars,z,logit))    
+
+    println("%6.2f %6d %6d %6d %7.2f %7.2f %7.2f %6.3f %6.3f %6.4f".
+        format(sres, ncl, nbl, cc, mi, misei, mims, ccnos, cd, readability))
   }
 
   /**
    * Get the ASL.
-   * NOTE: there's some ambiguity of the relationship between ASL and AWL, in other words, is
+   * NOTE: there's some ambiguity abut the relationship between ASL and AWL, in other words, is
    * ASL just the simple length of a sentence (what we calculate) or is it the sum of the adjusted
    * word lengths in a sentence.
    */
@@ -167,32 +173,37 @@ object Halstead {
     // Ignore whitespace: Abbas(2010), p25, paragraph 1, next to last sentence
     val total = sentences.foldLeft(0) { (sum, pair) =>
       val (num, sentence) = pair
+      
       val startText = sentence.start.getText
       val stopText = sentence.stop.getText
+      
+      // Count lengths of tokens between start and stop tokens of this sentence
       val start = sentence.start.getTokenIndex
       val stop = sentence.stop.getTokenIndex
       
-      val sentenceLen = (start to stop).foldLeft(0) { (sum_, index) =>          
+      val sentenceLen = (start to stop).foldLeft(0) { (len, index) =>          
         val token = tokens.get(index)
         
         val tokenText = token.getText
         
+        // Get length of this "patch" of the sentence on the default (or non-hidden) channel        
         if(token.getChannel == Token.DEFAULT_CHANNEL) {
+
           val patchLen = token.getStopIndex - token.getStartIndex + 1
           
-          sum_ + patchLen
+          len + patchLen
         }
         
         else
-          sum_
+          len
       }
       
-      // Handle special case (though typical) where ";" also ends a compound stt
-      // which will be off by one because the mark point is the "{"
-      if(startText == "{" && stopText == ";")
-        sum + sentenceLen - 1
-      else
+      // Curly to curly is sentence length, otherwise, subtract one for
+      // "}" -> ";" or ";" -> ";" or "{" -> ";"
+      if(startText == "{" && stopText == "}")
         sum + sentenceLen
+      else
+        sum + sentenceLen - 1
     }
     
     val asl = total / sentences.size.toDouble
@@ -357,7 +368,7 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   def ccProcessing(arg: TerminalNode): Unit = {
     val token = arg.getText
     token match {
-      case "if" | "else" | "for" | "while" | "case" | "||" | "&&" =>
+      case "if" | "else" | "for" | "while" | "case" | "||" | "&&" | "?" =>
         val count = decisions.getOrElse(token, 0)
         decisions(token) = count + 1
       case _ =>
@@ -365,12 +376,9 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
   }
   
   def halsteadProcessing(arg: TerminalNode): Unit = {  
-    // TODO: arrays
-    // TODO: nested expressions
-    // TODO: multiple unary expressions, eg, i++ + -j + *--p
+    // TODO: test nested expressions
+    // TODO: test multiple unary expressions, eg, i++ + -j + *--p
     val token = arg.getText
-    
-//    Helper.logger("token = "+token)
     
     val numTokens = tokens.getOrElse(token, 0)
     tokens(token) = numTokens + 1
@@ -473,19 +481,11 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
 
   }
   
-  /** number C statements */
   var numStatements = 0
-  
-  /** number sentences */
   var numSentences = 0
-  
-  /** number words */
-  var now = 0
-  
-  /** length of words */
-  var lenow = 0
-  
-  var dotPhase = false
+  var numWords = 0
+  var lenWords = 0
+  var sawDot = false
   var isIterationContext = false
   var isForContext = false
   var semiCount = 0
@@ -508,25 +508,25 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
     token match {
       case "*" if isUnaryOpContext =>
         // TODO: seems like more processing needed here since it is like DOT
-        now += 1
+        numWords += 1
         
-        lenow += len
+        lenWords += len
         
-        dotPhase = false
+        sawDot = false
         
       case "for" =>
-        now += 1
+        numWords += 1
         
-        lenow += len
+        lenWords += len
         
         isForContext = true
         
-        dotPhase = false
+        sawDot = false
 
       case ";" =>
         handleSemicolons(arg.getSymbol)
         
-        dotPhase = false
+        sawDot = false
           
       case "{" =>
         val startIndex = arg.getSymbol.getStartIndex
@@ -534,7 +534,7 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         
         push(arg.getSymbol)
 
-        dotPhase = false
+        sawDot = false
       
       case "}" =>
         val startIndex = arg.getSymbol.getStartIndex
@@ -552,21 +552,21 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
         numSentences += 1
         
       case tok: String if isIdentifier(tok) || isString(tok) || isNumber(tok) || keyWords.contains(tok) =>
-        val trueCount = if(!dotPhase) 1 else 2
-        now += trueCount
+        val trueCount = if(!sawDot) 1 else 2
+        numWords += trueCount
       
-        val trueLen = if(!dotPhase) len else len * 2
-        lenow += trueLen
+        val trueLen = if(!sawDot) len else len * 2
+        lenWords += trueLen
       
-        dotPhase = false
+        sawDot = false
         
       case "." | "->" =>
-        now += 2
+        numWords += 2
         
         val trueLen = len * 2
-        lenow += trueLen
+        lenWords += trueLen
         
-        dotPhase = true
+        sawDot = true
         
       case "-" | "--" | "++" | "&" | "!" | "~" |
            "++" | "--" |
@@ -575,15 +575,16 @@ class HalsteadParserListener(tokenStream: CommonTokenStream) extends ParseTreeLi
            "||" | "&&" | "->" | "<<" | ">>" |
            "[" | 
            "?" =>
-             now += 1
+             numWords += 1
              
-             lenow += len
+             lenWords += len
              
-             dotPhase = false
+             sawDot = false
       case _ =>
     }
   }
 
+  /** Handle semicolons inside and outside FOR loop */
   def handleSemicolons(curToken: Token): Unit = {
     numStatements += 1
     

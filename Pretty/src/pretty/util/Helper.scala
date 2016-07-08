@@ -1,7 +1,9 @@
 package pretty.util
 
 object Helper {
-  val DEBUG = if(System.getProperty("debug") != null) true else false
+  val state = System.getProperty("debug")
+  
+  val DEBUG = if(state == null || state != "true") false else true
   
   def logger(s: String): Unit = {
     if(DEBUG)
