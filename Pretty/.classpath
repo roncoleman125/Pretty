@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="antlr-4.5.3-complete.jar"/>
 	<classpathentry kind="lib" path="Pogje.jar"/>
 	<classpathentry kind="lib" path="boldt-cgrammar.jar"/>
+	<classpathentry kind="lib" path="commons-lang3-3.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
