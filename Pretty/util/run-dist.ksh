@@ -18,17 +18,28 @@ LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -d
 
 # Assumes we're in util folder
 cd ../bin
-for FILE in ../data/*.c
+
+INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
+
+for FILE in $INPUT_DIR/*.c
 do
   START=`date +%T`
   NAME=`basename $FILE`
   RESULTS=
   for SNAME in GNU KR BERKELEY LINUX
   do
+    # To generate variable on fly see...
+    # http://stackoverflow.com/questions/10820343/how-can-i-generate-new-variable-names-on-the-fly-in-a-shell-script
     eval STYLE=\$$SNAME
-    INDENTED=${FILE}.$SNAME
+    
+    F=`basename $FILE`
+    
+    INDENTED=~/tmp/${F}.$SNAME
+    
     /usr/local/bin/gindent $STYLE $FILE -o $INDENTED
+    
     DIST=`scala -cp ".:../commons-lang3-3.4.jar" pretty.readability.Distance $FILE $INDENTED`
+    
     RESULTS="$RESULTS $DIST"
     rm $INDENTED
   done

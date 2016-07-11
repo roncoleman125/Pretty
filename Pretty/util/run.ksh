@@ -1,6 +1,8 @@
 SCALA_BIN="/Users/roncoleman125/programs/scala-2.11.6/bin"
 PATH=$SCALA_BIN:$PATH
 
+export CLASSPATH=".:../fractop-0.3b.jar:../commons-lang3-3.4.jar"
+
 DAY=`date +%Y%m%d`
 OUTPUT_FILE=~/tmp/results-${DAY}.txt
 
@@ -17,7 +19,7 @@ do
   RESULTS="$NAME $LC "
   for METHOD in base 0 20 40 nm beau
   do
-    FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $FILE $METHOD util/c.config | awk '/FD =/{print $3}'`
+    FD=`scala pretty.Analyze $FILE $METHOD ../util/c.config | awk '/FD =/{print $3, $6, $9, $12, "|"}'`
     RESULTS="$RESULTS $FD"
   done
   END=`date +%T`

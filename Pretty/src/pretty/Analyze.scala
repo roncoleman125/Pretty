@@ -59,7 +59,7 @@ object Analyze {
     val measure = Config.getInstance(args(2)).measure
     
     if(Constants.verbose) println("analyzing "+path+" with "+method+ " and "+measure)    
-    val fdi = Imagery.getInstance(path,method)
+    val (fdi, distance) = Imagery.getInstance(path,method)
 
     val fdr = new fdresult(true)
    
@@ -90,7 +90,7 @@ object Analyze {
 
     val t1 = System.currentTimeMillis
     
-    println("FD = " + slope+" dt = "+(t1-t0)/1000.0)
+    println("FD = %f levenshtein = %d jaro = %f fuzzy = %d".format(slope,distance.levenshtein,distance.jaro,distance.fuzzy))
   }
 }
 

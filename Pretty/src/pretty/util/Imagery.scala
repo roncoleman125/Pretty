@@ -36,6 +36,7 @@ import java.awt.image.BufferedImage
 import scala.util.Random
 import pretty.Stress
 import pretty.Mango
+import pretty.readability.Distance
 
 object Imagery {
   val POINT_SIZE = 10
@@ -47,7 +48,7 @@ object Imagery {
    * @param method Method to stress or "mango" file
    * @param save Set to true to save a png of image
    */
-  def getInstance(path: String, method: String, save: Boolean = false): Imagery = {
+  def getInstance(path: String, method: String, save: Boolean = false): (Imagery, Distance) = {
     val stress = new Stress(path)
 
     val lines = method match {
@@ -80,6 +81,25 @@ object Imagery {
         null
     }
     
+    val original = Source.fromFile(path).getLines.toList
+    
+    val term = (0 until original.length).foldLeft("") { (s, k) =>
+      val line = original(k)
+      if(k > 0)
+        s + "\n" + line
+      else
+        s + line
+    }
+    val query = (0 until lines.length).foldLeft("") { (s, k) =>
+      val line = lines(k)
+      if(k > 0)
+        s + "\n" + line
+      else
+        s + line
+    }
+    
+    val distance = Distance.getMetrics(term,query)
+    
     val width = lines.foldLeft(0) { (width, line) =>
       val len = line.length
       if (len > width) len else width
@@ -90,7 +110,7 @@ object Imagery {
     if(save)
       ImageIO.write(fdi,"png",new File(path+".png"))
     
-    fdi
+    (fdi, distance)
   }
 }
 
