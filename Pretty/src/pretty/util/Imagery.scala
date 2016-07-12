@@ -37,6 +37,7 @@ import scala.util.Random
 import pretty.Stress
 import pretty.Mango
 import pretty.readability.Distance
+import pretty.Mode
 
 object Imagery {
   val POINT_SIZE = 10
@@ -56,12 +57,12 @@ object Imagery {
       case "nm" =>
         val mango = new Mango(path)
 //        val trans = mango.getMappings(path)
-        val trans = mango.getMappings(path, t => t._1.length >= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
+        val trans = mango.getMappings(path, Mode.DEBEAUTIFY, t => t._1.length >= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
         stress.nonmnemonic(trans)
         
       case "beau" =>
         val mango = new Mango(path)
-        val trans = mango.getMappings(path, t => t._1.length <= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
+        val trans = mango.getMappings(path, Mode.BEAUTIFY, t => t._1.length <= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
         stress.nonmnemonic(trans)        
         
       case "nc" =>
@@ -90,6 +91,7 @@ object Imagery {
       else
         s + line
     }
+    
     val query = (0 until lines.length).foldLeft("") { (s, k) =>
       val line = lines(k)
       if(k > 0)

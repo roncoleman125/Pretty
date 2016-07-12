@@ -34,6 +34,10 @@ import java.math.BigInteger
 import java.util.prefs.Base64
 import pretty.util.Config
 
+object Mode extends Enumeration {
+  val BEAUTIFY, DEBEAUTIFY = Value
+}
+
 object Mango {
 //  val keywords = List(
 //      "auto",
@@ -135,37 +139,37 @@ class Mango(path: String) {
   // Transform method of symbol to mango symbol
   val TRANSFORM: List[(String,Int)] => HashMap[String,String] = underbarSymbolize
   
-//  /** Returns the mappings of symbol to mango symbol */
-//  def getMappings(path: String): HashMap[String,String] = {
-//    if(Constants.verbose) println("creating mangos from "+path)
-//    
-//    // Remove tabs and strings
-//    if(Constants.verbose) println("removing strings and tabs...")
-//    val lines = filterStrings(filterTabs(Source.fromFile(path).getLines().toList))
-////    if(Constants.verbose) lines.foreach(p => println(p))
-//       
-//    // Get only symbols of a given length or longer
-//    if(Constants.verbose) println("removing comments...")
-//    val nocomments = filterComments(lines)
-//    
-//    // Get only symbols of a given frequency or higher.
-//    // Note: sort by length from longer to shorter is important on chance
-//    // that some symbols may be contained in others.
-//    if(Constants.verbose) println("building symbol table...")
-//    val symtab = buildSymbolTable(nocomments).
-//      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_SIZE).filter(t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY).
-//        sortWith(_._1.length > _._1.length)  
-//        
-//    if(Constants.verbose) println("building transformation table...")
-//    val trans = TRANSFORM(symtab)
-//    
-////    if(Constants.verbose) trans.foreach { t => println(t._1+" => "+t._2)}
-//    
-//    trans
-//  }
+  /** Returns the mappings of symbol to mango symbol */
+  def getMappings(path: String): HashMap[String,String] = {
+    if(Constants.verbose) println("creating mangos from "+path)
+    
+    // Remove tabs and strings
+    if(Constants.verbose) println("removing strings and tabs...")
+    val lines = filterStrings(filterTabs(Source.fromFile(path).getLines().toList))
+//    if(Constants.verbose) lines.foreach(p => println(p))
+       
+    // Get only symbols of a given length or longer
+    if(Constants.verbose) println("removing comments...")
+    val nocomments = filterComments(lines)
+    
+    // Get only symbols of a given frequency or higher.
+    // Note: sort by length from longer to shorter is important on chance
+    // that some symbols may be contained in others.
+    if(Constants.verbose) println("building symbol table...")
+    val symtab = buildSymbolTable(nocomments).
+      filter(t => t._1.trim().length >= Constants.MIN_SYMBOL_SIZE).filter(t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY).
+        sortWith(_._1.length > _._1.length)  
+        
+    if(Constants.verbose) println("building transformation table...")
+    val trans = TRANSFORM(symtab)
+    
+//    if(Constants.verbose) trans.foreach { t => println(t._1+" => "+t._2)}
+    
+    trans
+  }
   
   /** Get the mappings: old symbols -> new symbol */
-  def getMappings(path: String, symLenFilter: ((String,Int)) => Boolean, symFreqFilter: ((String,Int)) => Boolean ): HashMap[String,String] = {
+  def getMappings(path: String, mode: Mode.Value, symLenFilter: ((String,Int)) => Boolean, symFreqFilter: ((String,Int)) => Boolean ): HashMap[String,String] = {
     if(Constants.verbose) println("creating mangos from "+path)
     
     // Remove tabs and strings
@@ -187,7 +191,13 @@ class Mango(path: String) {
     symtab.foreach { t => println(t._1 + " => "+t._2)}
         
     if(Constants.verbose) println("building transformation table...")
-    val trans = doubleLengthSymbolize(symtab)
+    val trans = mode match {
+      case Mode.BEAUTIFY =>
+        doubleLengthSymbolize(symtab)
+        
+      case Mode.DEBEAUTIFY =>
+        underbarSymbolize(symtab)
+    }
     
 //    if(Constants.verbose) trans.foreach { t => println(t._1+" => "+t._2)}
     
