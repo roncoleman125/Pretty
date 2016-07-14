@@ -14,7 +14,9 @@ import scala.collection.mutable.HashMap
 
 object Cyclomatic {
   def main(args: Array[String]): Unit = {
-    println(em(args(0)))
+    args.foreach { path =>
+      println(path + " " + em(path))
+    }
   }
   
   def em(inputFile: String): Int = {
@@ -56,7 +58,7 @@ class MyParserListener extends ParseTreeListener {
   def visitTerminal(arg: TerminalNode): Unit = {
     val token = arg.getText
     token match {
-      case "if" | "else" | "for" | "while" | "case" | "||" | "&&" | "?" =>
+      case "if" | "for" | "while" | "case" | "||" | "&&" | "?" =>
         val count = decisions.getOrElse(token, 0)
         decisions(token) = count + 1
       case _ =>

@@ -150,9 +150,9 @@ object Halstead {
     
     val cm = ncl / loc
     
-    val mi = 171 - 5.2 * Math.log(V) - 0.23 * cc * Math.log(loc)
+    val mi = 171 - 5.2 * Math.log(V) - 0.23 * cc - 16.2 * Math.log(loc)
     
-    val misei = 171 - 5.2 * log2(V) - 0.23 * cc - 16.2 * log2(loc) + 50 * Math.sin(Math.sqrt(2.4*loc))
+    val misei = 171 - 5.2 * log2(V) - 0.23 * cc - 16.2 * log2(loc) + 50 * Math.sin(Math.sqrt(2.4*cm))
     
     val mims = Math.max(0, (171 - 5.2 * Math.log(V) - 0.23 * cc - 16.2 * Math.log(loc)) * 100.0 / 171.0)
     
