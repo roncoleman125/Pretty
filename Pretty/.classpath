@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="boldt-cgrammar.jar"/>
 	<classpathentry kind="lib" path="commons-lang3-3.4.jar"/>
 	<classpathentry kind="lib" path="commons-io-2.5.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JavaPretty"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

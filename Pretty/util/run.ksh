@@ -8,9 +8,12 @@ OUTPUT_FILE=~/tmp/results-${DAY}.txt
 
 rm $OUTPUT_FILE
 
+#INPUT_DIR=../data/*.c
+INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
+
 # Assumes we're in util folder
 cd ../bin
-for FILE in ../data/*.c
+for FILE in $INPUT_DIR/*.c
 do
   START=`date +%T`
   NAME=`basename $FILE`
@@ -19,7 +22,7 @@ do
   RESULTS="$NAME $LC "
   for METHOD in base 0 20 40 nm beau
   do
-    FD=`scala pretty.Analyze $FILE $METHOD ../util/c.config | awk '/FD =/{print $3, $6, $9, $12, "|"}'`
+    FD=`scala pretty.Analyze $FILE $METHOD ../util/c.config | awk '/FD =/{ print $3 }'`
     RESULTS="$RESULTS $FD"
   done
   END=`date +%T`

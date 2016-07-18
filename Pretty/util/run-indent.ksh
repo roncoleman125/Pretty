@@ -16,9 +16,12 @@ KR='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -cp33 -cs -d0 
 BERKELEY='-bbo -nbad -nbap -bc -br -brs -c33 -cd33 -cdb -ce -ci4 -cli0 -cp33 -di16 -fc1 -fca -hnl -i4 -ip4 -l75 -lp -npcs -nprs -psl -saf -sai -saw -sc -nsob -nss -ts8'
 LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1'
 
+#INPUT_DIR=../data/*.c
+INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
+
 # Assumes we're in util folder
 cd ../bin
-for FILE in ../data/*.c
+for FILE in $INPUT_DIR/*.c
 do
   START=`date +%T`
   NAME=`basename $FILE`
@@ -27,9 +30,10 @@ do
   RESULTS="$NAME $LC "
   for STYLE in "$GNU" "$KR" "$BERKELEY" "$LINUX"
   do
-    INDENTED=${FILE}.indent
+    BASEBANE=`basename ${FILE}`
+    INDENTED=~/tmp/${BASENAME}.indent
     /usr/local/bin/gindent $STYLE $FILE -o $INDENTED
-    FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $INDENTED base util/c.config | awk '/FD =/{print $3}'`
+    FD=`scala -cp ".:../fractop-0.3b.jar" pretty.Analyze $INDENTED base ../util/c.config | awk '/FD =/{print $3}'`
     RESULTS="$RESULTS $FD"
     rm $INDENTED
   done

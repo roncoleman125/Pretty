@@ -17,15 +17,17 @@ import scala.collection.mutable.ListBuffer
 import java.io.ByteArrayInputStream
 import scala.io.Source
 import scala.collection.mutable.HashMap
+import java.io.PrintWriter
 
 object Tag {
     
   val ran = new Random(0)
+  val out = new PrintWriter("/Users/roncoleman125/marist/research/Pretty/linux/meths/tags.txt")
   
-  def main(args: Array[String]): Unit = {    
-    
+  def main(args: Array[String]): Unit = {       
     FileWalker.walk(args(0), ".c", action)
-    
+    out.flush
+    out.close
   }
   
   def action(file: File): Unit = {
@@ -70,12 +72,12 @@ object Tag {
     
     parser.compilationUnit
     
-    print(file.getAbsolutePath+ " ")
+    out.print(file.getAbsolutePath+ " ")
     
     listener.marks.foreach { mark =>
-      print(mark + " ")
+      out.print(mark + " ")
     }
-    println
+    out.println
   }
   
   def strip(file: File): ByteArrayInputStream = {
@@ -86,7 +88,7 @@ object Tag {
     val bytes = IOUtils.toByteArray(in)
     
     val path = file.getAbsolutePath
-    println(">>>>> "+path)
+//    println(">>>>> "+path)
 
     val lines = Source.fromBytes(bytes).getLines.toList
      
@@ -123,7 +125,7 @@ object Tag {
         accum + lines(k) + "\n"
     }
 
-    println(filteredLinesAsString)
+//    println(filteredLinesAsString)
     
     in.close
     
@@ -139,8 +141,9 @@ class TagParserListener(tokenStream: CommonTokenStream) extends ParseTreeListene
   def enterEveryRule(arg: ParserRuleContext): Unit = {  
     arg match {
       case node: CParser.FunctionDefinitionContext =>
+        // Line numbers are 1-based, we need them 0-based
         val lineno = node.getStart.getLine
-        marks.append(lineno)
+        marks.append(lineno-1)
         
       case _ =>
     }
