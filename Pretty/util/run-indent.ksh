@@ -17,7 +17,8 @@ BERKELEY='-bbo -nbad -nbap -bc -br -brs -c33 -cd33 -cdb -ce -ci4 -cli0 -cp33 -di
 LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1'
 
 #INPUT_DIR=../data/*.c
-INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
+#INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
+INPUT_DIR=/Users/roncoleman125/marist/research/Pretty/linux/meths
 
 # Assumes we're in util folder
 cd ../bin

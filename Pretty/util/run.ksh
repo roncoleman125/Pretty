@@ -9,8 +9,8 @@ OUTPUT_FILE=~/tmp/results-${DAY}.txt
 rm $OUTPUT_FILE
 
 #INPUT_DIR=../data/*.c
-INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
-
+#INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
+INPUT_DIR=/Users/roncoleman125/marist/research/Pretty/linux/meths
 # Assumes we're in util folder
 cd ../bin
 for FILE in $INPUT_DIR/*.c

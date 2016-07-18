@@ -39,6 +39,7 @@ object GateCrasher2 {
       val end = lineNums(k+1) - 1
       
       for(i <- begin to end) {
+        // Retab see https://www.kernel.org/doc/Documentation/CodingStyle
         val line = pretty.JavaHelper.retab(lines(i),8)
         out.println(line)
       }
