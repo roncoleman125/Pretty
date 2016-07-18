@@ -19,7 +19,7 @@ do
   echo $NAME
   LC=`wc -l $FILE|awk '{print$1}'`
   RESULTS="$NAME $LC "
-  for METHOD in em #base 0 20 40 nm beau
+  for METHOD in base em 0 20 40 nm beau
   do
     FDM=`scala -cp ".:../fractop-0.3b.jar:../antlr-4.5.3-complete.jar:../boldt-cgrammar.jar" pretty.Analyze $FILE $METHOD ../util/c.config |
     	awk '/FD =/||/M =/{print $3}'`

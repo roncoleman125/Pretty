@@ -1,8 +1,8 @@
 package pretty.util
 
 import java.io.PrintWriter
-
 import scala.io.Source
+import java.io.File
 
 object GateCrasher2 {
   def main(args: Array[String]): Unit = {
@@ -17,30 +17,38 @@ object GateCrasher2 {
     tags.foreach { tag =>
       val values = tag.split(" +")
       val path = values(0)
+      val errs = values(1)
       
-      val lineNums = values.drop(1).toList.map { n => n.toInt }
+      val ranges = values.drop(2).toList.map { n => n.toInt }
       
-      if(lineNums.length != 0)
-        fragment(path,lineNums,outdir)
+      if(ranges.length != 0)
+        fragment(path,ranges,outdir)
     }
   }
   
-  def fragment(path: String, lns: List[Int], outdir: String) {
-    val lines = Source.fromFile(path).getLines().toList
-    val lineNums = lns ++ List(lines.length)
+  def fragment(path: String, ranges: List[Int], outdir: String) {
+//    val lines = Source.fromFile(path).getLines().toList
+
+    // Stip compiler directives
+    val lines = Helper.strip(new File(path)).split("\n")
       
-    (0 until lineNums.length-1).foreach { k =>
+    val sz = ranges.length
+    
+    (0 until sz/2).foreach { k =>
       val target = outdir + "/" + "%02d".format(k) + "-" + Helper.basename(path)
       
       val out = new PrintWriter(target)
       
-      val begin = lineNums(k)
+      val current = k * 2
       
-      val end = lineNums(k+1) - 1
+      val begin = ranges(current)
+      
+      val end = ranges(current+1)
       
       for(i <- begin to end) {
         // Retab see https://www.kernel.org/doc/Documentation/CodingStyle
         val line = pretty.JavaHelper.retab(lines(i),8)
+
         out.println(line)
       }
         
