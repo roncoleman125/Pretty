@@ -26,24 +26,25 @@
  */
 package pretty
 
+import java.io.PrintWriter
+
 import scala.io.Source
-import pretty.util.Imagery
+
 import fractop.BoxCountingMethod
-import fractop.fdresult
-import fractop.Util
 import fractop.MassRadiusMethod
-import javax.imageio.ImageIO
-import pretty.util.ImageryReadyImage
-import java.io.File
-import pretty.util.Constants
+import fractop.Util
+import fractop.fdresult
 import pretty.util.Config
+import pretty.util.Constants
+import pretty.util.Helper
+import pretty.util.Imagery
 
 object Analyze {
   def main(args: Array[String]): Unit = {
     val t0 = System.currentTimeMillis
     
     // Path to source file
-    val path = args(0)
+    val (path, tabstop) = retab(args(0))
     
     // Stress method
     val method = args(1)
@@ -55,11 +56,15 @@ object Analyze {
       System.exit(0)
     }
     
-    // Fractal dimension measurement specification
-    val measure = Config.getInstance(args(2)).measure
+    // Get the configuration
+    val configPath = args(2)
     
-    if(Constants.verbose) println("analyzing "+path+" with "+method+ " and "+measure)    
-    val fdi = Imagery.getInstance(path,method)
+    // Fractal dimension measurement specification
+    val measure = Config.getInstance(configPath).measure
+
+    if(Constants.verbose) println("analyzing "+path+" with "+method+ " and "+measure+ " tabstop "+ tabstop) 
+    
+    val fdi = Imagery.getInstance(path, method)
 
     val fdr = new fdresult(true)
    
@@ -91,6 +96,39 @@ object Analyze {
     val t1 = System.currentTimeMillis
     
     println("FD = %f ".format(slope))
+  }
+  
+  /** Retabs all lines in a file */
+  def retab(path: String): (String, Int) = {
+    val ts = System.getenv("TABSTOP")
+    
+    if(ts == null || ts.toInt == 0)
+      return (path, 0)
+    
+    val tabstop = ts.toInt
+    
+    val TMPDIR = System.getenv("TMPDIR")
+    
+    if(TMPDIR == null) {
+      Console.err.println("TMPDIR env var undefined to write retabbed file")
+      System.exit(1)
+    }
+    
+    val dest = TMPDIR + "RETABBED-" + Helper.basename(path)
+    
+    val out = new PrintWriter(dest)
+    
+    val lines = Source.fromFile(path).getLines
+    
+    lines.foreach { line =>
+      val retabbed = JavaHelper.retab(line, tabstop)
+      out.println(retabbed)
+    }
+    
+    out.flush
+    out.close
+    
+    (dest, tabstop)
   }
 }
 

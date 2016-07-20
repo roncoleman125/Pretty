@@ -3,6 +3,7 @@ PATH=$SCALA_BIN:$PATH
 
 export CLASSPATH=".:../fractop-0.3b.jar:../commons-lang3-3.4.jar:../javahelper-0-0.jar"
 export JAVA_OPTS='-Xmx6144M -d64'
+export TABSTOP=8
 
 DAY=`date +%Y%m%d`
 OUTPUT_FILE=~/tmp/results-${DAY}.txt
@@ -21,20 +22,15 @@ do
   
   NAME=`basename $FILE`
   echo $NAME
-    
-  RETABBED_FILE=~/tmp/$NAME
-  scala pretty.util.Retab $FILE 8 > $RETABBED_FILE
   
   LC=`wc -l $FILE|awk '{print$1}'`
   
   RESULTS="$NAME $LC "
   for METHOD in base 0 20 40 nm beau
   do
-    FD=`scala pretty.Analyze $RETABBED_FILE $METHOD ../util/c.config | awk '/FD =/{ print $3 }'`
+    FD=`scala pretty.Analyze $FILE $METHOD ../util/c.config | awk '/FD =/{ print $3 }'`
     RESULTS="$RESULTS $FD"
   done
   END=`date +%T`
   echo $RESULTS | tee -a $OUTPUT_FILE
-  
-  rm $RETABBED_FILE
 done
