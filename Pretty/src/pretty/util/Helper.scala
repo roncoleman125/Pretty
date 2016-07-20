@@ -62,10 +62,12 @@ object Helper {
     val (skipLineNums, _) = state
     
     val filteredLinesAsString = (0 until lines.length).foldLeft("") { (accum, k) =>
+      val line = lines(k)
+      
       if(skipLineNums.contains(k)) 
-        accum + "//" + lines(k) + "\n"
+        accum + "//" + line + "\n"
       else
-        accum + lines(k) + "\n"
+        accum + line + "\n"
     }
 
 //    println(filteredLinesAsString)
@@ -76,6 +78,7 @@ object Helper {
 //    
 //    bis
     
+    println(filteredLinesAsString)
     filteredLinesAsString
   }
 

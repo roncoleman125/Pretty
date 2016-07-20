@@ -27,7 +27,8 @@
 package pretty.util
 
 object Constants {
-  val verbose = true
+  val debug = System.getProperty("debug")
+  val verbose = if(debug != null && debug == "true") true else false
   
   val TAB_STOP = 4
   val MIN_SYMBOL_SIZE = 3

@@ -105,7 +105,7 @@ object Halstead {
     val n = n1 + n2
     
     // Compute volume
-    val V = N * Math.log(n) / LOG2
+    val V = if(n != 0) N * Math.log(n) / LOG2 else 0
     
     // Compute difficulty
     val D = n1 * N2 / (2.toDouble * (if(n2 != 0) n2 else 1))
@@ -208,7 +208,7 @@ object Halstead {
         sum + sentenceLen - 1
     }
     
-    val asl = total / sentences.size.toDouble
+    val asl = if(sentences.size != 0) total / sentences.size.toDouble else 0
     
     asl
   }

@@ -188,7 +188,7 @@ class Mango(path: String) {
     val symtabUnfiltered = buildSymbolTable(nocomments)
     val symtab = symtabUnfiltered.filter(symFreqFilter).filter(symLenFilter).sortWith(_._1.length > _._1.length).
       filter(t => isIdentifier(t._1))
-    symtab.foreach { t => println(t._1 + " => "+t._2)}
+    if(Constants.verbose) symtab.foreach { t => println(t._1 + " => "+t._2)}
         
     if(Constants.verbose) println("building transformation table...")
     val trans = mode match {

@@ -28,37 +28,9 @@ object Tag {
     FileWalker.walk(args(0), ".c", action)
     out.flush
     out.close
-//    val file = new File("data/linux-kernel/console.c")
-//    action(file)
   }
   
   def action(file: File): Unit = {
-
-//    // Filter out compiler directives since C.g4 cant handle them
-//    val in = new FileInputStream(file)
-//    
-//    import org.apache.commons.io.IOUtils
-//    val bytes = IOUtils.toByteArray(in)
-//    
-//    val path = file.getAbsolutePath
-//    println(">>>>> "+path)
-//
-//    val filteredlines = Source.fromBytes(bytes).getLines.toList.filter { line =>
-//      val pass = !line.startsWith("#")
-//      
-//      if(!pass)
-//        println(line)
-//        
-//      pass
-//    }.foldLeft("") { (accum, line) => accum + line + "\n" }
-//    
-//    println("----- "+filteredlines.length+" lines remain")
-//    println(filteredlines)
-//    
-//    val filteredBytes = filteredlines.getBytes
-//    
-//    val bis = new ByteArrayInputStream(filteredBytes)
-
     // Compile the file looking for methods
     val input = new ANTLRInputStream(Helper.strip(file))
 

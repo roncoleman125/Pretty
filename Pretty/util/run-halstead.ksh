@@ -10,7 +10,8 @@ rm $OUTPUT_FILE
 
 # Assumes we're in util folder
 cd ../bin
-INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
+#INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
+INPUT_DIR=/Users/roncoleman125/marist/research/Pretty/linux/meths
 for FILE in $INPUT_DIR/*.c
 do
 #  NAME=`basename $FILE`
