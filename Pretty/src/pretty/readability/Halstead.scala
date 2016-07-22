@@ -41,6 +41,7 @@ import scala.io.Source
 import pretty.util.Helper
 import org.antlr.v4.runtime.Token
 import scala.collection.mutable.ListBuffer
+import java.io.File
 
  
 case class Sentence(start: Token, stop: Token)
@@ -63,10 +64,10 @@ object Halstead {
   
   /** Process one file */
   def process(path: String): Unit = {
-    val in = new FileInputStream(path)
+//    val in = new FileInputStream(path)
     
     // Get tne ANTLR parser loaded
-    val input = new ANTLRInputStream(in)
+    val input = new ANTLRInputStream(Helper.stripDirectives(new File(path), false))
 
     val lexer = new CLexer(input)
     
