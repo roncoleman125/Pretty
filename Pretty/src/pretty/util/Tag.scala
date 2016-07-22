@@ -32,7 +32,7 @@ object Tag {
   
   def action(file: File): Unit = {
     // Compile the file looking for methods
-    val input = new ANTLRInputStream(Helper.strip(file))
+    val input = new ANTLRInputStream(Helper.stripDirectives(file,true))
 
     val lexer = new CLexer(input)
     

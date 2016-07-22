@@ -27,10 +27,8 @@ object GateCrasher2 {
   }
   
   def fragment(path: String, ranges: List[Int], outdir: String) {
-//    val lines = Source.fromFile(path).getLines().toList
-
-    // Stip compiler directives
-    val lines = Helper.strip(new File(path)).split("\n")
+    // Strip compiler directives
+    val lines = Helper.stripDirectives(new File(path), false).split("\n")
       
     val sz = ranges.length
     

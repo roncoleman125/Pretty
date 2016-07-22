@@ -30,8 +30,8 @@
  */
 import java.io.File
 import java.io.PrintWriter
-
 import scala.io.Source
+import pretty.util.Helper
 
 /** Extant annotations */
 object Annotation extends Enumeration {
@@ -39,13 +39,14 @@ object Annotation extends Enumeration {
   val METH, INIT, DECL, SKIP = Value
 }
 
-/** This class holds all the data need to save the annotated program function */
+/** This class holds all the data needed to save the annotated program function */
 case class Data(state: Annotation.Value,lines: List[String], fileno: Int )
 
+/** This class contains info to write the method to a unique file name */
 case class IO(path: String, outdir: String)
 
 /**
- * THis class is the main driver program to "crash" a file.
+ * THis class is the main driver program to fragment or "crash" a file.
  */
 object GateCrasher {
   
@@ -74,35 +75,35 @@ object GateCrasher {
     val io = IO(path,outdir)
     
     // Process each line and flush the annotated sections
-    val lines = Source.fromFile(path).getLines
+    val lines = Helper.stripDirectives(new File(path), false).split("\n")
     
     val terminated = lines.foldLeft(Annotation.SKIP,List[String](),-1) { (state, line) =>
       val (admit, buffer, k) = state
       line.toLowerCase match {
           // Skip preprocessor directives
-        case s if s.startsWith("#") =>
+        case s: String if s.startsWith("#") =>
           (admit,buffer,k)
           
           // Function or method coming
-        case s if s.startsWith("@meth") =>
+        case s: String if s.startsWith("@meth") =>
           flush(Data(admit, buffer, k), io)
           
           (Annotation.METH, List[String](), k+1)
         
           // Initialization on way
-        case s if s.startsWith("@init") =>
+        case s: String if s.startsWith("@init") =>
           flush(Data(admit, buffer, k), io)
           
           (Annotation.INIT, List[String](), k)
           
           // Declaration on way
-        case s if s.startsWith("@decl") =>
+        case s: String if s.startsWith("@decl") =>
           flush(Data(admit, buffer, k), io)
           
           (Annotation.DECL, List[String](), k)
           
           // Any of these on way (treated like comments for now)
-        case s if s.startsWith("@enum") ||
+        case s:String if s.startsWith("@enum") ||
                   s.startsWith("@struct") ||
                   s.startsWith("@union") ||
                   s.startsWith("@type") ||
@@ -112,14 +113,19 @@ object GateCrasher {
           (Annotation.SKIP,List[String](), k)                    
           
           // Skipping from here
-        case s if s.startsWith("@skip") =>
+        case s: String if s.startsWith("@skip") =>
           flush(Data(admit, buffer, k), io)
           
           (Annotation.SKIP, List[String](), k)
-          
+
           // Unless this is a skip, accumulate LOC
-        case s if admit != Annotation.SKIP =>         
+        case s: String if admit != Annotation.SKIP =>         
           (admit,buffer ++ List(line), k)
+          
+        // Detect bogus annotations
+        case s: String if s.startsWith("@") =>
+          println("WARNING encountered unknown annotation '" + s + "'")
+          (admit,buffer,k)
           
         case _ =>
           (admit,buffer,k)
@@ -139,6 +145,10 @@ object GateCrasher {
     
     val pw = new PrintWriter(new File(outputPath))
     
+    val sz = data.lines.size
+    if(sz >= 3 && (!data.lines(sz-1).startsWith("}") || !data.lines(sz-2).startsWith("}")))
+      println("WARNING ending curl-brace not found")
+      
     data.lines.foreach(pw.println)
     
     pw.flush

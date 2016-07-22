@@ -22,18 +22,13 @@ object Helper {
     else
       s.substring(j+1)
   }
-
-  def strip(file: File): String = {
-    // Filter out compiler directives since C.g4 cant handle them
-    val in = new FileInputStream(file)
-    
-    import org.apache.commons.io.IOUtils
-    val bytes = IOUtils.toByteArray(in)
-    
-    val path = file.getAbsolutePath
-//    println(">>>>> "+path)
-
-    val lines = Source.fromBytes(bytes).getLines.toList
+   
+  def stripDirectives(file: File, comment: Boolean): String = {
+    stripDirectives(Source.fromFile(file).mkString, comment)
+  }
+  
+  def stripDirectives(s: String, comment: Boolean): String = {
+    val lines = s.split("\n")
      
     val state = (0 until lines.length).foldLeft((HashMap[Int,Int](),false)) { (state, k) =>
       val (skipLineNums, inhash) = state
@@ -58,27 +53,23 @@ object Helper {
       }
     }
     
-    // Remove the lines by commenting them out
+    // Remove the lines by deleting or commenting them
     val (skipLineNums, _) = state
     
     val filteredLinesAsString = (0 until lines.length).foldLeft("") { (accum, k) =>
       val line = lines(k)
       
-      if(skipLineNums.contains(k)) 
-        accum + "//" + line + "\n"
+      if(skipLineNums.contains(k)) {
+        if(comment)
+          accum + "//" + line + "\n"
+        else
+          accum
+      }
       else
         accum + line + "\n"
     }
-
+    
 //    println(filteredLinesAsString)
-    
-    in.close
-    
-//    val bis = new ByteArrayInputStream(filteredLinesAsString.getBytes)
-//    
-//    bis
-    
-    println(filteredLinesAsString)
     filteredLinesAsString
   }
 
