@@ -1,38 +1,7 @@
-/*
- * Copyright (c) Pretty Contributors
- * See CONTRIBUTORS.TXT for a full list of copyright holders.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Scaly Project nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE DEVELOPERS ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+package pretty.util
 
-/**
- * @author Ron.Coleman
- */
-import java.io.File
 import java.io.PrintWriter
-import scala.io.Source
-import pretty.util.Helper
-
+import java.io.File
 /** Extant annotations */
 object Annotation extends Enumeration {
   type Annotation = Value
@@ -45,11 +14,7 @@ case class Data(state: Annotation.Value,lines: List[String], fileno: Int )
 /** This class contains info to write the method to a unique file name */
 case class IO(path: String, outdir: String)
 
-/**
- * THis class is the main driver program to fragment or "crash" a file.
- */
-object GateCrasher {
-  
+object Tester {
   def main(args: Array[String]): Unit = {
     if(args.length < 2) {
       println("usage: GateCrasher input-dir output-dir")
@@ -119,8 +84,9 @@ object GateCrasher {
           (Annotation.SKIP, List[String](), k)
 
           // Unless this is a skip, accumulate LOC
-        case s: String if admit != Annotation.SKIP =>         
-          (admit,buffer ++ List(line), k)
+        case s: String if admit != Annotation.SKIP =>  
+          val retabbed = pretty.JavaHelper.retab(line, 8)
+          (admit,buffer ++ List(retabbed), k)
           
         // Detect bogus annotations
         case s: String if s.startsWith("@") =>
@@ -144,12 +110,22 @@ object GateCrasher {
     val outputPath = io.outdir+"%02d-%s".format(data.fileno,(new File(io.path).getName))
     
     val pw = new PrintWriter(new File(outputPath))
+
+    val lines = data.lines
+
+    val sz = lines.size
     
-    val sz = data.lines.size
-    if(sz >= 3 && (!data.lines(sz-1).startsWith("}") || !data.lines(sz-2).startsWith("}")))
-      println("WARNING ending curl-brace not found")
+    // Test method ending as "}" or "}" followed by blank line
+    if(sz >= 2 && !lines(sz-1).startsWith("}") && !lines(sz-2).startsWith("}"))
+      println("WARNING doubtful method ending")
       
-    data.lines.foreach(pw.println)
+    // Write out all the lines except blank last lines
+    (0 until sz).foreach { k =>
+      val line = lines(k)
+      if(line != 0 && k != (sz-1))
+        pw.println(line)
+    }
+//    lines.foreach(pw.println)
     
     pw.flush
     pw.close
