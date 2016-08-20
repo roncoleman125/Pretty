@@ -40,7 +40,8 @@ object Tester {
     val io = IO(path,outdir)
     
     // Process each line and flush the annotated sections
-    val lines = Helper.stripDirectives(new File(path), false).split("\n")
+    val commentDirectives = true
+    val lines = Helper.stripDirectives(new File(path), commentDirectives).split("\n")
     
     val terminated = lines.foldLeft(Annotation.SKIP,List[String](),-1) { (state, line) =>
       val (admit, buffer, k) = state
