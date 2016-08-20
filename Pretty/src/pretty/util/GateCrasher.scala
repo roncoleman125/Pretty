@@ -29,14 +29,14 @@ object Tester {
     
     val fileNames = getFiles(indir)
     
-    fileNames.foreach { f =>
-      fragment(f,outdir)
+    fileNames.foreach { path =>
+      println(path)
+      fragment(path,outdir)
     }
 
   }
   
   def fragment(path: String, outdir: String): Unit = {
-    println(path)
     val io = IO(path,outdir)
     
     // Process each line and flush the annotated sections
@@ -82,16 +82,16 @@ object Tester {
           flush(Data(admit, buffer, k), io)
           
           (Annotation.SKIP, List[String](), k)
-
+          
+        // Detect bogus annotations
+        case s: String if s.startsWith("@") =>
+          println("WARNING unknown annotation '" + s + "'")
+          (admit,buffer,k)
+          
           // Unless this is a skip, accumulate LOC
         case s: String if admit != Annotation.SKIP =>  
           val retabbed = pretty.JavaHelper.retab(line, 8)
           (admit,buffer ++ List(retabbed), k)
-          
-        // Detect bogus annotations
-        case s: String if s.startsWith("@") =>
-          println("WARNING encountered unknown annotation '" + s + "'")
-          (admit,buffer,k)
           
         case _ =>
           (admit,buffer,k)
@@ -112,17 +112,26 @@ object Tester {
     val pw = new PrintWriter(new File(outputPath))
 
     val lines = data.lines
-
+    
     val sz = lines.size
     
-    // Test method ending as "}" or "}" followed by blank line
-    if(sz >= 2 && !lines(sz-1).startsWith("}") && !lines(sz-2).startsWith("}"))
-      println("WARNING doubtful method ending")
+    // Test method ending as "}" on last or next to last line
+    val lastCurly = sz >= 3 && lines(sz-1).startsWith("}")
+    val lastNextCurly = sz >= 3 && lines(sz-2).startsWith("}")
+    
+    if(sz >= 3 &&
+       !lines(sz-1).startsWith("}") && 
+       !lines(sz-1).startsWith("{}") &&
+       !lines(sz-1).endsWith("}") &&
+       !lines(sz-2).startsWith("}") &&
+       !lines(sz-2).startsWith("{}") &&
+       !lines(sz-2).endsWith("}"))
+      println("WARNING doubtful method ending in "+Helper.basename(outputPath))
       
     // Write out all the lines except blank last lines
     (0 until sz).foreach { k =>
       val line = lines(k)
-      if(line != 0 && k != (sz-1))
+      if(line.length != 0 || k != (sz-1))
         pw.println(line)
     }
 //    lines.foreach(pw.println)
