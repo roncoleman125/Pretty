@@ -101,8 +101,8 @@ object Imagery {
 //    }
 //    
 //    val distance = Distance.getMetrics(term,query)
-    
     val width = lines.foldLeft(0) { (width, line) =>
+//      println(line)
       val len = line.length
       if (len > width) len else width
     }
