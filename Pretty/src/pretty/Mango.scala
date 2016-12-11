@@ -238,14 +238,14 @@ class Mango(path: String) {
   
   /** Returns the mapping from old symbol -> new symbol with underbar */
   def underbarSymbolize(symtab: List[(String,Int)]): HashMap[String,String] = {
-    if(Constants.verbose) {
-    val easies = symtab.foldLeft(0) { (count, sym) =>
-      if(sym._1.contains("_"))
-        count+sym._2
-      else
-        count
+    if (Constants.verbose) {
+      val easies = symtab.foldLeft(0) { (count, sym) =>
+        if (sym._1.contains("_"))
+          count + sym._2
+        else
+          count
       }
-      println("transformations to make: "+easies)
+      println("transformations to make: " + easies)
     }
     
     symtab.foldLeft(HashMap[String,String]()) { (trans,sym) =>
@@ -281,14 +281,17 @@ class Mango(path: String) {
         if(trans.contains(newSym)) Console.err.println(oldSym+" => "+newSym+" collision")
         trans(oldSym) = newSym
       }
-      else {
-        // If symbol has no clues, split name in half
-        val newSym = (0 to oldSym.length/2).foldLeft("") { (composite, k) =>
+      else if(oldSym.length >= Constants.MIN_SYMBOL_SIZE) {
+        // If symbol has no clues, reduce symbol by half
+        val newSym = (0 until oldSym.length/2).foldLeft("") { (composite, k) =>
           composite + oldSym(k)
         }
-        if(trans.contains(newSym)) Console.err.println(oldSym+" => "+newSym+" collision")
+//        println(oldSym + " => " + newSym)
+        if(trans.contains(newSym)) Console.err.println("symbol collision: "+oldSym+" => "+newSym)
         trans(oldSym) = newSym
       }
+      else
+        Console.err.println("bad mapping for "+oldSym)
 
       trans
     }

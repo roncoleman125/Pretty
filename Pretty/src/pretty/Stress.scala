@@ -48,7 +48,7 @@ class Stress(path: String) {
    * Makes the input file nonmnemonic.
    * @param tpath File path of the transformations
    */
-  def nonmnemonic(tpath: String): List[String] = {
+  def filter(tpath: String): List[String] = {
     val trans = HashMap[String,String]()
     
     val maps = Source.fromFile(tpath).getLines().toList
@@ -59,17 +59,21 @@ class Stress(path: String) {
       trans(keyValue(0)) = keyValue(1)
     }
     
-    nonmnemonic(trans)
+    filter(null,trans)
   }
 
-  def nonmnemonic(trans: HashMap[String, String]): List[String] = {
+  def filter(keys: List[String], trans: HashMap[String, String]): List[String] = {
     val lines = Source.fromFile(path).getLines().toList
-    lines.map { line => transform(line, trans) }
+    lines.map {
+      line => transform(line, keys, trans)
+    }
   }
 
-  def transform(line: String, trans: HashMap[String, String]): String = {
-    trans.foldLeft(line) { (newLine, kv) =>
-      newLine.replaceAll(kv._1, kv._2)
+  def transform(line: String, keys: List[String], transMap: HashMap[String, String]): String = {
+    keys.foldLeft(line) { (revisedLine, key) =>
+      val oldSym = key
+      val newSym = transMap(key)
+      revisedLine.replaceAll(oldSym, newSym)
     }
   }
   

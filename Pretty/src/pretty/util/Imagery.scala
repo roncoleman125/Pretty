@@ -54,21 +54,23 @@ object Imagery {
 
     val lines = method match {
 
-      case "nm" =>
+      case "NON" =>
         val mango = new Mango(path)
 //        val trans = mango.getMappings(path)
-        val trans = mango.getMappings(path, Mode.DEBEAUTIFY, t => t._1.length >= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
-        stress.nonmnemonic(trans)
+        val transMap = mango.getMappings(path, Mode.DEBEAUTIFY, t => t._1.length >= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
+        val keys = transMap.keySet.toList.sortWith(_.length > _.length)
+        stress.filter(keys, transMap)
         
-      case "beau" =>
+      case "MNE" =>
         val mango = new Mango(path)
-        val trans = mango.getMappings(path, Mode.BEAUTIFY, t => t._1.length <= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
-        stress.nonmnemonic(trans)        
+        val transMap = mango.getMappings(path, Mode.BEAUTIFY, t => t._1.length <= Constants.MIN_SYMBOL_SIZE, t => t._2 >= Constants.MIN_SYMBOL_FREQUENCY)
+        val keys = transMap.keySet.toList.sortWith(_.length > _.length)
+        stress.filter(keys, transMap)        
         
-      case "nc" =>
+      case "DEC" =>
         new Mango(path).decomment
         
-      case "base" =>
+      case "BASE" =>
         stress.none
 
       case num: String if num.toInt >= 0 =>
