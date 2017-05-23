@@ -94,7 +94,7 @@ class Stress(path: String) {
     val ran = new Random(seed)
     
     lines.map { line =>
-      val r = ran.nextInt(n)
+      val r = ran.nextInt(n) + 1
       
       val indent = (1 to r).foldLeft("") { (xs, x) => xs + " " }
 //      println(indent + line)
