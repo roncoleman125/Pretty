@@ -28,6 +28,7 @@ package pretty
 
 import scala.io.Source
 import pretty.util.Imagery
+import pretty.util.Config
 
 /** This program converts the source to an artefact and writes an PNG file */
 object SingleImage {
@@ -39,7 +40,9 @@ object SingleImage {
       if (len > width) len else width
     }
     
-    Imagery.getInstance(args(0), "base", true)
+    Config.getInstance(args(1))
+    
+    Imagery.getInstance(args(0), "BASE", true)
   }
 
 }
