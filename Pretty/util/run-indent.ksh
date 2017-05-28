@@ -6,6 +6,10 @@
 SCALA_BIN="/Users/roncoleman125/programs/scala-2.11.6/bin"
 PATH=$SCALA_BIN:$PATH
 
+export CLASSPATH=".:../fractop-0.3b.jar:../commons-lang3-3.4.jar:../javahelper-0-0.jar"
+export TMPDIR=~/tmp
+export TABSTOP=8
+
 DAY=`date +%Y%m%d`
 OUTPUT_FILE=~/tmp/indents-${DAY}.txt
 
@@ -25,7 +29,7 @@ INPUT_DIR=../data/coreutils/methods-only
 
 # Assumes we're in util folder
 cd ../bin
-for FILE in $INPUT_DIR/*.c
+for FILE in $INPUT_DIR/00-touch.c
 do
   START=`date +%T`
   NAME=`basename $FILE`
@@ -37,7 +41,7 @@ do
     BASENAME=`basename ${FILE}`
     INDENTED=~/tmp/${BASENAME}.indent
     /usr/local/bin/gindent $STYLE $FILE -o $INDENTED
-    FD=`scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $INDENTED base ../util/c.config | awk '/FD =/{print $3}'`
+    FD=`scala -cp "$CLASSPATH" pretty.Analyze $INDENTED BASE ../util/c.config | awk '/FD =/{print $3}'`
     RESULTS="$RESULTS $FD"
     rm $INDENTED
   done
