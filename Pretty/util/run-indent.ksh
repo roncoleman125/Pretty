@@ -7,8 +7,8 @@ SCALA_BIN="/Users/roncoleman125/programs/scala-2.11.6/bin"
 PATH=$SCALA_BIN:$PATH
 
 export CLASSPATH=".:../fractop-0.3b.jar:../commons-lang3-3.4.jar:../javahelper-0-0.jar"
-export TMPDIR=~/tmp
-export TABSTOP=8
+#export TMPDIR=~/tmp
+#export TABSTOP=8
 
 DAY=`date +%Y%m%d`
 OUTPUT_FILE=~/tmp/indents-${DAY}.txt
@@ -23,19 +23,24 @@ BERKELEY='-bbo -nbad -nbap -bc -br -brs -c33 -cd33 -cdb -ce -ci4 -cli0 -cp33 -di
 LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1'
 
 #INPUT_DIR=../coreutils/methods-only/data/
-INPUT_DIR=../data/coreutils/methods-only
+#INPUT_DIR=../data/coreutils/methods-only
 #INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
 #INPUT_DIR=/Users/roncoleman125/marist/research/Pretty/linux/meths
+INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/meths/kernel/testbed2
 
 # Assumes we're in util folder
 cd ../bin
-for FILE in $INPUT_DIR/00-touch.c
+for FILE in $INPUT_DIR/*.c
 do
   START=`date +%T`
   NAME=`basename $FILE`
   echo $NAME
   LC=`wc -l $FILE|awk '{print$1}'`
   RESULTS="$NAME $LC "
+  
+  FD=`scala -cp "$CLASSPATH" pretty.Analyze $FILE BASE ../util/c.config | awk '/FD =/{print $3}'`
+  RESULTS="$RESULTS $FD"
+  
   for STYLE in "$GNU" "$KR" "$BERKELEY" "$LINUX"
   do
     BASENAME=`basename ${FILE}`

@@ -7,16 +7,10 @@ PATH=$SCALA_BIN:$PATH
 
 DAY=`date +%Y%m%d`
 OUTPUT_FILE=~/tmp/decom-${DAY}.txt
-INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
+#INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths"
+INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/meths/kernel/testbed2
 
 rm $OUTPUT_FILE
-
-# Styles
-DEFAULT=
-GNU='-nbad -bap -bbo -nbc -bl -bli2 -bls -cp1 -ncdb -nce -cs -di2 -ndj -nfc1 -nfca -hnl -i2 -ip5 -lp -pcs -nprs -psl -saf -sai -saw -nsc -nsob'
-KR='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -cp33 -cs -d0 -di1 -nfc1 -nfca -hnl -i4 -ip0 -l75 -lp -npcs -nprs -npsl -saf -sai -saw -nsc -nsob -nss'
-BERKELEY='-bbo -nbad -nbap -bc -br -brs -c33 -cd33 -cdb -ce -ci4 -cli0 -cp33 -di16 -fc1 -fca -hnl -i4 -ip4 -l75 -lp -npcs -nprs -psl -saf -sai -saw -sc -nsob -nss -ts8'
-LINUX='-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -hnl -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i8 -ip0 -l80 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts8 -il1'
 
 # Assumes we're in util folder
 cd ../bin
@@ -34,7 +28,7 @@ do
   RESULTS="$NAME $LC "
   
   # Run the stripped WITHOUT indent styles
-  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $STRIPPED base ../util/c.config | awk '/FD =/{print $3}'`
+  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $STRIPPED BASE ../util/c.config | awk '/FD =/{print $3}'`
   RESULTS="$RESULTS $FD"
 
 #  # Run the stripped with indent styles

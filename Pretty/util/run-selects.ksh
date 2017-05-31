@@ -11,20 +11,29 @@ OUTPUT_FILE=~/tmp/results-${DAY}.txt
 
 rm $OUTPUT_FILE
 
-#INPUT_DIR=../data/coreutils/methods-only
+INPUT_DIR=../data/coreutils/methods-only
 #INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/arch/alpha/kernel
 #INPUT_DIR=/Users/roncoleman125/marist/research/Pretty/linux/meths
 #INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/linux-master/kernel
-INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/meths/kernel/testbed2
+
+SELECTS_FILE=~/tmp/retab-needed.txt
+
+SELECTS=`cat $SELECTS_FILE`
 
 # Assumes we're in util folder
 cd ../bin
-for FILE in $INPUT_DIR/*.c
+
+for SELECT in $SELECTS
 do
+  FILE="$INPUT_DIR/$SELECT"
+  
   START=`date +%T`
+  
   NAME=`basename $FILE`
   echo $NAME
+  
   LC=`wc -l $FILE|awk '{print$1}'`
+  
   RESULTS="$NAME $LC "
   for METHOD in BASE 0 2 5 NON MNE
   do

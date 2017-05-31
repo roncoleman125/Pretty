@@ -97,7 +97,7 @@ class Stress(path: String) {
       val r = ran.nextInt(n) + 1
       
       val indent = (1 to r).foldLeft("") { (xs, x) => xs + " " }
-//      println(indent + line)
+      println(indent + line)
       indent + line
     }
   }

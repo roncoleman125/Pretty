@@ -10,7 +10,8 @@ OUTPUT_FILE=~/tmp/recom-${DAY}.txt
 
 rm $OUTPUT_FILE
 
-INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths-0-comments"
+#INPUT_DIR="/Users/roncoleman125/Marist/Research/Pretty/meths-0-comments"
+INPUT_DIR=/Users/roncoleman125/marist/research/pretty/linux/meths/kernel/testbed2
 
 # Assumes we're in util folder
 cd ../bin
@@ -20,18 +21,18 @@ do
   NAME=`basename $FILE`
   #echo $NAME
   
-  # Get the base measurement
-  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $FILE base ../util/c.config | awk '/FD =/{print $3}'`
+  # Get the baseline measurement
+  FD=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $FILE BASE ../util/c.config | awk '/FD =/{print $3}'`
 
   # Recomment the file
   RECOM=${FILE}.recom
-  JAVA_OPTS='-Xmx6144M -d64' scala -cp "." pretty.Recomment $FILE ../data/comdb.zip > $RECOM
+  JAVA_OPTS='-Xmx6144M -d64' scala -cp "." pretty.Recomment $FILE ../data/coreutils/comments-db/comdb.zip > $RECOM
 
   LC=`wc -l $RECOM | awk '{print$1}'`
   RESULTS="$NAME $LC $FD"
   
-  # Analyze the file's D
-  FD2=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $RECOM base ../util/c.config | awk '/FD =/{print $3}'`
+  # Analyze the recommented file's D
+  FD2=`JAVA_OPTS='-Xmx6144M -d64' scala -cp ".:../fractop-0.3c.jar" pretty.Analyze $RECOM BASE ../util/c.config | awk '/FD =/{print $3}'`
   RESULTS="$RESULTS $FD2"
   
   rm $RECOM

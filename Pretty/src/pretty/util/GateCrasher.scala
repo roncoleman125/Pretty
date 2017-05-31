@@ -108,7 +108,7 @@ object Tester {
     if(data.state != Annotation.METH || data.fileno < 0)
       return
       
-    val outputPath = io.outdir+"%02d-%s".format(data.fileno,(new File(io.path).getName))
+    val outputPath = io.outdir+"%03d-%s".format(data.fileno,(new File(io.path).getName))
     
     val pw = new PrintWriter(new File(outputPath))
 
